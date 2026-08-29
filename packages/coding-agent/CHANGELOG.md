@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added an opt-in local macOS Deno single-file build target without changing the existing Bun release build.
+
 ## [0.84.4] - 2026-08-28
 
 ### New Features

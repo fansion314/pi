@@ -19,6 +19,38 @@ Run from source:
 
 The script can be run from any directory. Pi keeps the caller's current working directory.
 
+## macOS Deno Standalone Binary
+
+Install the build prerequisites and locked dependencies from the repository root:
+
+```bash
+brew install node deno
+npm ci --ignore-scripts
+```
+
+Build the executable:
+
+```bash
+npm --prefix packages/coding-agent run build:binary:deno
+```
+
+The build supports Apple silicon and Intel macOS hosts and writes the executable to
+`packages/coding-agent/dist/pi`. The executable embeds its runtime assets, documentation,
+extension examples, image support, and native macOS helpers. Deno permissions are compiled with `--allow-all`
+because Pi needs filesystem, subprocess, environment, and network access.
+
+Install it for the current user:
+
+```bash
+install -d "$HOME/.local/bin"
+install -m 755 packages/coding-agent/dist/pi "$HOME/.local/bin/pi"
+export PATH="$HOME/.local/bin:$PATH"
+pi --version
+```
+
+Add the `PATH` export to `~/.zshrc` to keep it across terminal sessions. Rebuild and rerun the
+`install` command to replace an existing local binary.
+
 ## Forking / Rebranding
 
 Configure via `package.json`:
