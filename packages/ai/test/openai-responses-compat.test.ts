@@ -2,13 +2,19 @@ import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { stream as streamOpenAIResponses } from "../src/api/openai-responses.ts";
 import { getModel } from "../src/compat.ts";
-import type { Model } from "../src/types.ts";
+import type { AssistantMessage, Model, ToolResultMessage } from "../src/types.ts";
 
 type CapturedHeaders = Headers | string[][] | Record<string, string | readonly string[]> | undefined;
 
 interface CapturedResponsesPayload {
+	include?: string[];
+	input?: Array<Record<string, unknown>>;
+	max_output_tokens?: number;
 	prompt_cache_key?: string;
+	prompt_cache_retention?: string;
+	reasoning?: { effort?: string; summary?: string };
 	session_id?: string;
+	store?: boolean;
 	tools?: Array<{ name?: string; strict?: boolean }>;
 }
 
@@ -105,6 +111,271 @@ describe("openai-responses provider defaults", () => {
 		expect(capturedPayload).not.toMatchObject({
 			reasoning: expect.anything(),
 		});
+	});
+
+	it("uses DeepSeek Responses request compatibility metadata", async () => {
+		const model = getModel("deepseek", "deepseek-v4-flash");
+		let capturedPayload: CapturedResponsesPayload | undefined;
+		let requestUrl: string | undefined;
+		let capturedHeaders: CapturedHeaders;
+
+		vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+			requestUrl = input instanceof Request ? input.url : String(input);
+			capturedHeaders = init?.headers;
+			return new Response("data: [DONE]\n\n", {
+				status: 200,
+				headers: { "content-type": "text/event-stream" },
+			});
+		});
+
+		const stream = streamOpenAIResponses(
+			model,
+			{
+				systemPrompt: "Follow system instructions.",
+				messages: [{ role: "user", content: "Use the tool.", timestamp: Date.now() }],
+				tools: [
+					{
+						name: "ping",
+						description: "Ping",
+						parameters: Type.Object({ value: Type.String() }),
+					},
+				],
+			},
+			{
+				apiKey: "test-key",
+				maxTokens: 123,
+				reasoningEffort: "medium",
+				sessionId: "deepseek-session",
+				onPayload: (payload) => {
+					capturedPayload = payload as CapturedResponsesPayload;
+				},
+			},
+		);
+
+		for await (const event of stream) {
+			if (event.type === "done" || event.type === "error") break;
+		}
+
+		expect(model.api).toBe("openai-responses");
+		expect(model.compat).toMatchObject({
+			supportsDeveloperRole: false,
+			sessionAffinityFormat: "openai-nosession",
+			supportsLongCacheRetention: false,
+		});
+		expect(requestUrl).toBe("https://api.deepseek.com/responses");
+		expect(getHeader(capturedHeaders, "session_id")).toBeNull();
+		expect(getHeader(capturedHeaders, "x-client-request-id")).toBe("deepseek-session");
+		expect(capturedPayload?.input?.[0]).toMatchObject({ role: "system" });
+		expect(capturedPayload?.max_output_tokens).toBe(123);
+		expect(capturedPayload?.reasoning).toEqual({ effort: "high", summary: "auto" });
+		expect(capturedPayload?.prompt_cache_key).toBe("deepseek-session");
+		expect(capturedPayload?.prompt_cache_retention).toBeUndefined();
+		expect(capturedPayload?.store).toBe(false);
+		expect(capturedPayload?.tools).toEqual([expect.objectContaining({ name: "ping" })]);
+		expect(capturedPayload?.tools?.[0]).not.toHaveProperty("strict");
+	});
+
+	it("parses DeepSeek reasoning, text, function calls, and usage", async () => {
+		const events = [
+			{ type: "response.created", response: { id: "resp_deepseek" } },
+			{
+				type: "response.output_item.added",
+				output_index: 0,
+				item: { id: "rs_1", type: "reasoning", status: "in_progress", summary: [], content: [] },
+			},
+			{
+				type: "response.reasoning_text.delta",
+				item_id: "rs_1",
+				output_index: 0,
+				content_index: 0,
+				delta: "thinking",
+			},
+			{
+				type: "response.output_item.done",
+				output_index: 0,
+				item: {
+					id: "rs_1",
+					type: "reasoning",
+					status: "completed",
+					summary: [],
+					content: [{ type: "reasoning_text", text: "thinking" }],
+				},
+			},
+			{
+				type: "response.output_item.added",
+				output_index: 1,
+				item: { id: "msg_1", type: "message", status: "in_progress", role: "assistant", content: [] },
+			},
+			{
+				type: "response.output_text.delta",
+				item_id: "msg_1",
+				output_index: 1,
+				content_index: 0,
+				delta: "answer",
+			},
+			{
+				type: "response.output_item.done",
+				output_index: 1,
+				item: {
+					id: "msg_1",
+					type: "message",
+					status: "completed",
+					role: "assistant",
+					content: [{ type: "output_text", text: "answer", annotations: [] }],
+				},
+			},
+			{
+				type: "response.output_item.added",
+				output_index: 2,
+				item: {
+					id: "fc_1",
+					type: "function_call",
+					status: "in_progress",
+					call_id: "call_1",
+					name: "lookup",
+					arguments: "",
+				},
+			},
+			{
+				type: "response.function_call_arguments.delta",
+				item_id: "fc_1",
+				output_index: 2,
+				delta: '{"query":"deepseek"}',
+			},
+			{
+				type: "response.function_call_arguments.done",
+				item_id: "fc_1",
+				output_index: 2,
+				arguments: '{"query":"deepseek"}',
+			},
+			{
+				type: "response.output_item.done",
+				output_index: 2,
+				item: {
+					id: "fc_1",
+					type: "function_call",
+					status: "completed",
+					call_id: "call_1",
+					name: "lookup",
+					arguments: '{"query":"deepseek"}',
+				},
+			},
+			{
+				type: "response.completed",
+				response: {
+					id: "resp_deepseek",
+					status: "completed",
+					output: [],
+					usage: {
+						input_tokens: 12,
+						output_tokens: 7,
+						total_tokens: 19,
+						input_tokens_details: { cached_tokens: 5 },
+						output_tokens_details: { reasoning_tokens: 3 },
+					},
+				},
+			},
+		];
+		const sse = `${events.map((event) => `data: ${JSON.stringify(event)}`).join("\n\n")}\n\n`;
+		vi.spyOn(globalThis, "fetch").mockResolvedValue(
+			new Response(sse, { status: 200, headers: { "content-type": "text/event-stream" } }),
+		);
+
+		const result = await streamOpenAIResponses(
+			getModel("deepseek", "deepseek-v4-flash"),
+			{ messages: [{ role: "user", content: "Use lookup.", timestamp: Date.now() }] },
+			{ apiKey: "test-key" },
+		).result();
+
+		expect(result.stopReason).toBe("toolUse");
+		expect(result.responseId).toBe("resp_deepseek");
+		expect(result.content).toEqual([
+			{
+				type: "thinking",
+				thinking: "thinking",
+				thinkingSignature: expect.any(String),
+			},
+			{ type: "text", text: "answer", textSignature: expect.any(String) },
+			{ type: "toolCall", id: "call_1|fc_1", name: "lookup", arguments: { query: "deepseek" } },
+		]);
+		expect(result.usage).toMatchObject({
+			input: 7,
+			output: 7,
+			cacheRead: 5,
+			cacheWrite: 0,
+			reasoning: 3,
+			totalTokens: 19,
+		});
+	});
+
+	it("preserves native DeepSeek function-call ids during replay", async () => {
+		const model = getModel("deepseek", "deepseek-v4-flash");
+		const assistant: AssistantMessage = {
+			role: "assistant",
+			api: "openai-responses",
+			provider: "deepseek",
+			model: model.id,
+			content: [
+				{
+					type: "toolCall",
+					id: "call_deepseek_1|fc_deepseek_1",
+					name: "lookup",
+					arguments: { query: "deepseek" },
+				},
+			],
+			usage: {
+				input: 0,
+				output: 0,
+				cacheRead: 0,
+				cacheWrite: 0,
+				totalTokens: 0,
+				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+			},
+			stopReason: "toolUse",
+			timestamp: Date.now() - 1000,
+		};
+		const toolResult: ToolResultMessage = {
+			role: "toolResult",
+			toolCallId: "call_deepseek_1|fc_deepseek_1",
+			toolName: "lookup",
+			content: [{ type: "text", text: "ok" }],
+			isError: false,
+			timestamp: Date.now(),
+		};
+		let capturedPayload: CapturedResponsesPayload | undefined;
+		vi.spyOn(globalThis, "fetch").mockResolvedValue(
+			new Response("data: [DONE]\n\n", {
+				status: 200,
+				headers: { "content-type": "text/event-stream" },
+			}),
+		);
+
+		const stream = streamOpenAIResponses(
+			model,
+			{
+				messages: [{ role: "user", content: "Use lookup.", timestamp: Date.now() - 2000 }, assistant, toolResult],
+			},
+			{
+				apiKey: "test-key",
+				onPayload: (payload) => {
+					capturedPayload = payload as CapturedResponsesPayload;
+				},
+			},
+		);
+
+		for await (const event of stream) {
+			if (event.type === "done" || event.type === "error") break;
+		}
+
+		const functionCall = capturedPayload?.input?.find((item) => item.type === "function_call");
+		const functionResult = capturedPayload?.input?.find((item) => item.type === "function_call_output");
+		expect(functionCall).toMatchObject({
+			id: "fc_deepseek_1",
+			call_id: "call_deepseek_1",
+			name: "lookup",
+			arguments: '{"query":"deepseek"}',
+		});
+		expect(functionResult).toMatchObject({ call_id: "call_deepseek_1", output: "ok" });
 	});
 
 	it("forwards required tool choice", async () => {

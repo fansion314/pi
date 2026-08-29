@@ -72,7 +72,8 @@ pi
 | Ant Ling | `ANT_LING_API_KEY` | `ant-ling` |
 | Azure OpenAI Responses | `AZURE_OPENAI_API_KEY` | `azure-openai-responses` |
 | OpenAI | `OPENAI_API_KEY` | `openai` |
-| DeepSeek | `DEEPSEEK_API_KEY` | `deepseek` |
+| DeepSeek Responses | `DEEPSEEK_API_KEY` | `deepseek` |
+| DeepSeek Chat Completions (legacy) | `DEEPSEEK_API_KEY` | `deepseek-completions` |
 | NVIDIA NIM | `NVIDIA_API_KEY` | `nvidia` |
 | Google Gemini | `GEMINI_API_KEY` | `google` |
 | Amazon Bedrock | `AWS_BEARER_TOKEN_BEDROCK` | `amazon-bedrock` |
@@ -116,6 +117,7 @@ Store credentials in `~/.pi/agent/auth.json`:
   "ant-ling": { "type": "api_key", "key": "..." },
   "openai": { "type": "api_key", "key": "sk-..." },
   "deepseek": { "type": "api_key", "key": "sk-..." },
+  "deepseek-completions": { "type": "api_key", "key": "sk-..." },
   "nvidia": { "type": "api_key", "key": "nvapi-..." },
   "google": { "type": "api_key", "key": "..." },
   "opencode": { "type": "api_key", "key": "..." },
@@ -135,6 +137,11 @@ Store credentials in `~/.pi/agent/auth.json`:
 `qwen-token-plan`, but limits the picker to the models documented for Individual subscriptions. The existing
 provider keeps its broader catalog for backward compatibility. When using `auth.json`, store the
 credential under the provider you select; an environment variable is shared by both international providers.
+
+`deepseek` uses DeepSeek's [Responses API](https://api-docs.deepseek.com/guides/responses_api/).
+`deepseek-completions` retains the legacy Chat Completions protocol. Both use `DEEPSEEK_API_KEY`, but stored
+credentials are provider-scoped, so add a separate `auth.json` entry or run `/login deepseek-completions` when
+using the legacy provider without an environment variable.
 
 The file is created with `0600` permissions (user read/write only). Auth file credentials take priority over environment variables.
 

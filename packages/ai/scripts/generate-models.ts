@@ -287,6 +287,15 @@ const DEEPSEEK_V4_FLASH_THINKING_LEVEL_MAP = {
 	...DEEPSEEK_V4_THINKING_LEVEL_MAP,
 	low: "low",
 } as const;
+const DEEPSEEK_RESPONSES_THINKING_LEVEL_MAP = {
+	off: "none",
+	minimal: "low",
+	low: "low",
+	medium: "high",
+	high: "high",
+	xhigh: "high",
+	max: "max",
+} as const;
 const QWEN_TOKEN_PLAN_HIGH_MAX_THINKING_LEVEL_MAP = {
 	minimal: null,
 	low: null,
@@ -646,7 +655,8 @@ function detectOpenAICompletionsCompat(model: Model<"openai-completions">): Open
 	const isNvidia = provider === "nvidia" || baseUrl.includes("integrate.api.nvidia.com");
 	const isAntLing = provider === "ant-ling" || baseUrl.includes("api.ant-ling.com");
 	const isTogetherReasoningOnly = isTogether && TOGETHER_REASONING_ONLY_MODELS.has(model.id);
-	const isDeepSeek = provider === "deepseek" || baseUrl.toLowerCase().includes("deepseek.com");
+	const isDeepSeek =
+		provider === "deepseek" || provider === "deepseek-completions" || baseUrl.toLowerCase().includes("deepseek.com");
 
 	const isNonStandard =
 		isNvidia ||
@@ -883,6 +893,9 @@ function applyThinkingLevelMetadata(model: Model<any>): void {
 	if (model.provider === "xai" && model.api === "openai-responses" && model.thinkingLevelMap === undefined) {
 		mergeThinkingLevelMap(model, { off: null, minimal: null });
 	}
+	if (model.provider === "deepseek" && model.api === "openai-responses") {
+		mergeThinkingLevelMap(model, DEEPSEEK_RESPONSES_THINKING_LEVEL_MAP);
+	}
 	if (supportsOpenAiXhigh(model.id)) {
 		mergeThinkingLevelMap(model, { xhigh: "xhigh" });
 	}
@@ -932,7 +945,10 @@ function applyThinkingLevelMetadata(model: Model<any>): void {
 			model,
 			model.provider === "openrouter"
 				? { ...DEEPSEEK_V4_THINKING_LEVEL_MAP, xhigh: "xhigh", max: null }
-				: (model.provider === "deepseek" || model.provider === "opencode" || model.provider === "opencode-go") &&
+				: (model.provider === "deepseek" ||
+						model.provider === "deepseek-completions" ||
+						model.provider === "opencode" ||
+						model.provider === "opencode-go") &&
 					model.id.includes("deepseek-v4-flash")
 					? DEEPSEEK_V4_FLASH_THINKING_LEVEL_MAP
 					: DEEPSEEK_V4_THINKING_LEVEL_MAP,
@@ -2544,15 +2560,20 @@ async function generateModels() {
 		}
 	}
 
-	const deepseekCompat: OpenAICompletionsCompat = {
+	const deepseekCompletionsCompat: OpenAICompletionsCompat = {
 		requiresReasoningContentOnAssistantMessages: true,
 		thinkingFormat: "deepseek",
 	};
-	const deepseekV4Models: Model<"openai-completions">[] = [
+	const deepseekResponsesCompat: OpenAIResponsesCompat = {
+		supportsDeveloperRole: false,
+		sessionAffinityFormat: "openai-nosession",
+		supportsLongCacheRetention: false,
+	};
+	const deepseekV4Models: Model<"openai-responses">[] = [
 		{
 			id: "deepseek-v4-flash",
 			name: "DeepSeek V4 Flash",
-			api: "openai-completions",
+			api: "openai-responses",
 			baseUrl: "https://api.deepseek.com",
 			provider: "deepseek",
 			reasoning: true,
@@ -2565,12 +2586,12 @@ async function generateModels() {
 			},
 			contextWindow: 1000000,
 			maxTokens: 384000,
-			compat: deepseekCompat,
+			compat: deepseekResponsesCompat,
 		},
 		{
 			id: "deepseek-v4-flash-vision-exp",
 			name: "DeepSeek V4 Flash Vision Exp",
-			api: "openai-completions",
+			api: "openai-responses",
 			baseUrl: "https://api.deepseek.com",
 			provider: "deepseek",
 			reasoning: true,
@@ -2583,12 +2604,12 @@ async function generateModels() {
 			},
 			contextWindow: 1000000,
 			maxTokens: 384000,
-			compat: deepseekCompat,
+			compat: deepseekResponsesCompat,
 		},
 		{
 			id: "deepseek-v4-pro",
 			name: "DeepSeek V4 Pro",
-			api: "openai-completions",
+			api: "openai-responses",
 			baseUrl: "https://api.deepseek.com",
 			provider: "deepseek",
 			reasoning: true,
@@ -2601,10 +2622,16 @@ async function generateModels() {
 			},
 			contextWindow: 1000000,
 			maxTokens: 384000,
-			compat: deepseekCompat,
+			compat: deepseekResponsesCompat,
 		},
 	];
-	allModels.push(...deepseekV4Models);
+	const deepseekCompletionsModels: Model<"openai-completions">[] = deepseekV4Models.map((model) => ({
+		...model,
+		api: "openai-completions",
+		provider: "deepseek-completions",
+		compat: deepseekCompletionsCompat,
+	}));
+	allModels.push(...deepseekV4Models, ...deepseekCompletionsModels);
 
 	const antLingCompat: OpenAICompletionsCompat = {
 		supportsStore: false,
@@ -2668,9 +2695,9 @@ async function generateModels() {
 				...(preservesNativeReasoningEffort
 					? {
 							requiresReasoningContentOnAssistantMessages:
-								deepseekCompat.requiresReasoningContentOnAssistantMessages,
+								deepseekCompletionsCompat.requiresReasoningContentOnAssistantMessages,
 						}
-					: deepseekCompat),
+					: deepseekCompletionsCompat),
 			};
 		}
 	}

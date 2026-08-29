@@ -54,6 +54,15 @@ afterEach(() => {
 });
 
 describe("environment API keys", () => {
+	it("shares DEEPSEEK_API_KEY across Responses and legacy Chat Completions providers", () => {
+		const env = { DEEPSEEK_API_KEY: "deepseek-key" };
+
+		expect(findEnvKeys("deepseek", env)).toEqual(["DEEPSEEK_API_KEY"]);
+		expect(findEnvKeys("deepseek-completions", env)).toEqual(["DEEPSEEK_API_KEY"]);
+		expect(getEnvApiKey("deepseek", env)).toBe("deepseek-key");
+		expect(getEnvApiKey("deepseek-completions", env)).toBe("deepseek-key");
+	});
+
 	it("does not treat generic GitHub tokens as GitHub Copilot credentials", () => {
 		delete process.env.COPILOT_GITHUB_TOKEN;
 		process.env.GH_TOKEN = "gh-token";

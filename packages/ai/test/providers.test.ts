@@ -9,6 +9,8 @@ import { amazonBedrockProvider } from "../src/providers/amazon-bedrock.ts";
 import { anthropicProvider } from "../src/providers/anthropic.ts";
 import { cloudflareAIGatewayProvider } from "../src/providers/cloudflare-ai-gateway.ts";
 import { cloudflareWorkersAIProvider } from "../src/providers/cloudflare-workers-ai.ts";
+import { deepseekProvider } from "../src/providers/deepseek.ts";
+import { deepseekCompletionsProvider } from "../src/providers/deepseek-completions.ts";
 import { fauxAssistantMessage, fauxProvider } from "../src/providers/faux.ts";
 import { googleVertexProvider } from "../src/providers/google-vertex.ts";
 import type {
@@ -64,6 +66,21 @@ describe("builtin providers", () => {
 			supportsOpenAIGrammarTools: true,
 		});
 		expect(getBuiltinModel("anthropic", "claude-haiku-4-5").compat?.supportsStrictTools).toBe(true);
+	});
+
+	it("registers DeepSeek Responses and legacy Chat Completions catalogs", async () => {
+		const models = createModels({ authContext: fakeAuthContext({ DEEPSEEK_API_KEY: "deepseek-key" }) });
+		models.setProvider(deepseekProvider());
+		models.setProvider(deepseekCompletionsProvider());
+
+		const responses = models.getModels("deepseek");
+		const completions = models.getModels("deepseek-completions");
+		expect(responses.map((model) => model.id)).toEqual(completions.map((model) => model.id));
+		expect(responses).toHaveLength(3);
+		expect(responses.every((model) => model.api === "openai-responses")).toBe(true);
+		expect(completions.every((model) => model.api === "openai-completions")).toBe(true);
+		expect((await models.getAuth("deepseek"))?.auth.apiKey).toBe("deepseek-key");
+		expect((await models.getAuth("deepseek-completions"))?.auth.apiKey).toBe("deepseek-key");
 	});
 
 	it("uses official Kimi K3 pricing for Moonshot providers", () => {

@@ -1469,7 +1469,7 @@ describe("openai-completions tool_choice", () => {
 		}
 	});
 
-	it("sends max_tokens for built-in and custom DeepSeek API models", async () => {
+	it("sends max_tokens for legacy built-in and custom DeepSeek API models", async () => {
 		const customModel = {
 			...localOpenAICompletionsModel,
 			id: "custom-deepseek-model",
@@ -1484,8 +1484,8 @@ describe("openai-completions tool_choice", () => {
 			baseUrl: "https://API.DeepSeek.COM",
 		} satisfies Model<"openai-completions">;
 		const nativeModels = [
-			getModel("deepseek", "deepseek-v4-flash")!,
-			getModel("deepseek", "deepseek-v4-pro")!,
+			getModel("deepseek-completions", "deepseek-v4-flash")!,
+			getModel("deepseek-completions", "deepseek-v4-pro")!,
 		] as const;
 		const cases = [...nativeModels, customModel, customUppercaseModel] as const;
 

@@ -60,7 +60,7 @@ Unified LLM API with provider collections, automatic auth resolution, token and 
 - **Ant Ling**
 - **Azure OpenAI (Responses)**
 - **OpenAI Codex** (ChatGPT Plus/Pro subscription, requires OAuth, see below)
-- **DeepSeek**
+- **DeepSeek** (Responses API, plus the `deepseek-completions` legacy Chat Completions provider)
 - **NVIDIA NIM**
 - **Anthropic**
 - **Google**
@@ -231,7 +231,7 @@ Snippets in the rest of this README assume a `models` collection set up like thi
 
 A **provider** is the runtime unit: it owns its model catalog, its auth (API key resolution, OAuth flows), and its stream behavior. A `Models` collection holds providers and routes every request to the provider that owns the model.
 
-Providers internally share **API implementations** (the wire protocols): Anthropic models use `anthropic-messages`, OpenAI uses `openai-responses`, while xAI, Groq, Cerebras, OpenRouter, and most others share `openai-completions`. Mixed-API providers (GitHub Copilot, OpenCode Zen) dispatch per model.
+Providers internally share **API implementations** (the wire protocols): Anthropic models use `anthropic-messages`, OpenAI and DeepSeek use `openai-responses`, while Groq, Cerebras, OpenRouter, and most others share `openai-completions`. DeepSeek's legacy protocol remains available as the separate `deepseek-completions` provider. Mixed-API providers (GitHub Copilot, OpenCode Zen) dispatch per model.
 
 ### Provider Factories
 
@@ -416,7 +416,8 @@ Built-in providers resolve these env vars (Node.js; in browsers pass `apiKey` ex
 | Ant Ling | `ANT_LING_API_KEY` |
 | Azure OpenAI | `AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_BASE_URL` (e.g. `https://{resource}.ai.azure.com`) or `AZURE_OPENAI_RESOURCE_NAME`. Supports `*.openai.azure.com`, `*.cognitiveservices.azure.com` and `*.ai.azure.com`; root endpoints auto-normalize to `/openai/v1`. Optional: `AZURE_OPENAI_API_VERSION` (default `v1`), `AZURE_OPENAI_DEPLOYMENT_NAME_MAP`. |
 | Anthropic | `ANTHROPIC_API_KEY` or `ANTHROPIC_OAUTH_TOKEN` |
-| DeepSeek | `DEEPSEEK_API_KEY` |
+| DeepSeek Responses (`deepseek`) | `DEEPSEEK_API_KEY` |
+| DeepSeek Chat Completions (`deepseek-completions`) | `DEEPSEEK_API_KEY` |
 | NVIDIA NIM | `NVIDIA_API_KEY` |
 | Google | `GEMINI_API_KEY` |
 | Vertex AI | `GOOGLE_CLOUD_API_KEY` or `GOOGLE_CLOUD_PROJECT` (or `GCLOUD_PROJECT`) + `GOOGLE_CLOUD_LOCATION` + ADC |
@@ -452,6 +453,11 @@ Built-in providers resolve these env vars (Node.js; in browsers pass `apiKey` ex
 `QWEN_TOKEN_PLAN_API_KEY`. The Individual provider exposes only the models documented for Individual
 subscriptions, while the existing provider retains its broader catalog for backward compatibility.
 Stored credentials remain provider-scoped, so save the key under the provider ID you register.
+
+`deepseek` uses DeepSeek's [Responses API](https://api-docs.deepseek.com/guides/responses_api/), while
+`deepseek-completions` retains the legacy Chat Completions protocol. Both resolve `DEEPSEEK_API_KEY`.
+Stored credentials remain provider-scoped, so authenticating `deepseek` does not implicitly authenticate
+`deepseek-completions`.
 
 Amazon Bedrock resolves ambient AWS credentials (`AWS_PROFILE`, access key pairs, `AWS_BEARER_TOKEN_BEDROCK`, ECS task roles, web identity tokens); its provider-owned login flow supports bearer tokens, AWS profiles, and the existing credential chain. Vertex AI resolves either an explicit key or gcloud Application Default Credentials plus project/location, with a provider-owned login flow for API keys, ADC, and service-account files.
 
