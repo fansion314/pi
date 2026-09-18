@@ -26,8 +26,11 @@ if (( EUID == 0 )); then
     for variant in dnr dnr-webview; do
         archive="$variant-$dnr_version-1-x86_64.pkg.tar.zst"
         url="https://github.com/fansion314/dnr/releases/download/v$dnr_version/$archive"
-        curl --fail --location --retry 3 --output "$runtime/$archive" "$url"
-        curl --fail --location --retry 3 --output "$runtime/$archive.sha256" "$url.sha256"
+        printf 'Downloading runtime package: %s\n' "$archive"
+        curl --fail --location --silent --show-error --connect-timeout 20 --max-time 180 \
+            --retry 3 --retry-all-errors --retry-delay 5 --output "$runtime/$archive" "$url"
+        curl --fail --location --silent --show-error --connect-timeout 20 --max-time 60 \
+            --retry 3 --retry-all-errors --retry-delay 5 --output "$runtime/$archive.sha256" "$url.sha256"
         (
             cd "$runtime"
             read -r digest filename extra < "$archive.sha256"
