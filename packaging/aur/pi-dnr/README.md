@@ -4,10 +4,11 @@
 downloads `https://github.com/fansion314/pi.git` at tag `v0.85.1` and installs
 the executable application package as `/usr/bin/pi`.
 
-Install either `dnr` (system CEF) or `dnr-webview` before building. Both packages
-include `dnr` and `dnc`; `dnr-webview` provides `dnr=0.1.0`, satisfying the
-recipe's `dnr>=0.1.0` build and runtime dependency. A manually installed runtime
-does not satisfy pacman's package dependency database.
+Install any one of `dnr`, `dnr-webview`, `dnr-bin` or `dnr-webview-bin` before
+building. All include `dnr` and `dnc` and satisfy `dnr>=0.1.0` for building and
+running. Pi reuses the installed provider and does not force a backend change.
+A manually installed runtime does not satisfy pacman's dependency database.
+Choose [`pi-dnr-bin`](../pi-dnr-bin/README.md) to install Pi without compiling it.
 
 ```sh
 # From the Pi checkout, as a normal user with base-devel installed:
@@ -74,4 +75,5 @@ Validated on CachyOS x86_64 with dnr/dnc 0.1.0:
 
 No system package was installed, no user configuration was changed, and no paid
 model API was used. This was not a clean-chroot or AUR-server installation test.
-Local evidence is in `.artifacts/aur-pi-dnr-validation/`.
+The original local evidence was moved to `../dnr/dist/validation-pi-aur/`
+to keep its nested source/configuration files outside this checkout.

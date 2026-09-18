@@ -64,10 +64,13 @@ npm run check         # Lint, format, and type check
 ## Arch Linux / CachyOS with dnr
 
 The [`pi-dnr` AUR recipe](packaging/aur/pi-dnr/README.md) builds this fork as a
-single `.dnp` application and installs the `pi` command. It uses an already
-installed `dnr` or `dnr-webview` package for both building and running; it does
-not build or bundle Deno/V8. Package versions follow upstream Pi, starting at
-`0.85.1`. See the recipe's README for dependencies and installation instructions.
+single `.dnp` application and installs the `pi` command. The
+[`pi-dnr-bin` recipe](packaging/aur/pi-dnr-bin/README.md) instead downloads the
+prebuilt GitHub Release package. Both accept any one of `dnr`, `dnr-webview`,
+`dnr-bin` or `dnr-webview-bin` through the `dnr>=0.1.0` dependency. Neither builds
+or bundles Deno/V8. Package versions follow upstream Pi, starting at `0.85.1`.
+Tagged releases build in the official Arch container and test both runtime
+backends before publication. See the recipe READMEs for installation details.
 
 ## Building standalone binaries from release source
 
