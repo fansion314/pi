@@ -52,7 +52,7 @@ describe("getSupportedThinkingLevels", () => {
 		expect(getSupportedThinkingLevels(model!)).not.toContain("max");
 	});
 
-	it.each(["gpt-5.4", "gpt-5.5", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"] as const)(
+	it.each(["gpt-5.5", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-6-astra"] as const)(
 		"includes xhigh for openai-codex %s models",
 		(modelId) => {
 			const model = getModel("openai-codex", modelId);
@@ -82,14 +82,14 @@ describe("getSupportedThinkingLevels", () => {
 		expect(getSupportedThinkingLevels(model!)).toEqual(["medium", "high", "xhigh"]);
 	});
 
-	it("includes every documented Responses reasoning level for DeepSeek V4 Flash", () => {
-		const model = getModel("deepseek", "deepseek-v4-flash");
+	it("includes every documented Responses reasoning level for DeepSeek V4.1 Flash", () => {
+		const model = getModel("deepseek", "deepseek-flash");
 		expect(model).toBeDefined();
 		expect(getSupportedThinkingLevels(model!)).toEqual(["off", "minimal", "low", "medium", "high", "xhigh", "max"]);
 	});
 
 	it("preserves legacy DeepSeek V4 Flash completion reasoning levels", () => {
-		const model = getModel("deepseek-completions", "deepseek-v4-flash");
+		const model = getModel("deepseek-completions", "deepseek-flash");
 		expect(model).toBeDefined();
 		expect(getSupportedThinkingLevels(model!)).toEqual(["off", "low", "high", "max"]);
 	});

@@ -1,7 +1,7 @@
 import { Type } from "typebox";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { convertMessages } from "../src/api/openai-completions.ts";
-import { getModel, stream, streamSimple } from "../src/compat.ts";
+import { getModel, normalizeContext, stream, streamSimple } from "../src/compat.ts";
 import type { AssistantMessage, Model, SimpleStreamOptions, Tool, ToolResultMessage } from "../src/types.ts";
 
 const mockState = vi.hoisted(() => ({
@@ -320,7 +320,8 @@ describe("openai-completions tool_choice", () => {
 	});
 
 	it("stores z.ai effort metadata", () => {
-		for (const provider of ["zai", "zai-coding-cn"] as const) {
+		// The China catalog has retired GLM-5.2; it remains in the global catalog.
+		for (const provider of ["zai"] as const) {
 			for (const modelId of ["glm-5.2", "glm-5.2-highspeed"] as const) {
 				const model = getModel(provider, modelId)!;
 				expect(model.compat?.supportsReasoningEffort).toBe(true);
@@ -334,7 +335,8 @@ describe("openai-completions tool_choice", () => {
 					max: "max",
 				});
 			}
-
+		}
+		for (const provider of ["zai", "zai-coding-cn"] as const) {
 			const glm53 = getModel(provider, "glm-5.3")!;
 			expect(glm53.compat?.supportsReasoningEffort).toBe(true);
 			expect(glm53.thinkingLevelMap).toEqual({
@@ -1096,10 +1098,10 @@ describe("openai-completions tool_choice", () => {
 		expect(params.messages?.[0]?.role).toBe("system");
 	});
 
-	it("keeps developer messages for OpenAI and Anthropic OpenRouter reasoning model instructions", async () => {
+	it("keeps developer messages for OpenAI and Anthropic OpenRouter batch instructions", async () => {
 		for (const model of [
 			getModel("openrouter", "openai/gpt-5.2-codex"),
-			getModel("openrouter", "anthropic/claude-sonnet-4.5"),
+			getModel("openrouter", "anthropic/claude-fable-5.1:batch"),
 		]) {
 			expect(model).toBeDefined();
 			let payload: unknown;
@@ -1295,7 +1297,7 @@ describe("openai-completions tool_choice", () => {
 		const model = { ...baseModel, api: "openai-completions" } as Model<"openai-completions">;
 		const messages = convertMessages(
 			model,
-			{
+			normalizeContext({
 				messages: [
 					{
 						role: "assistant",
@@ -1318,7 +1320,7 @@ describe("openai-completions tool_choice", () => {
 						timestamp: Date.now(),
 					},
 				],
-			},
+			}),
 			{
 				...model.compat,
 				supportsStore: false,
@@ -1484,7 +1486,7 @@ describe("openai-completions tool_choice", () => {
 			baseUrl: "https://API.DeepSeek.COM",
 		} satisfies Model<"openai-completions">;
 		const nativeModels = [
-			getModel("deepseek-completions", "deepseek-v4-flash")!,
+			getModel("deepseek-completions", "deepseek-flash")!,
 			getModel("deepseek-completions", "deepseek-v4-pro")!,
 		] as const;
 		const cases = [...nativeModels, customModel, customUppercaseModel] as const;
