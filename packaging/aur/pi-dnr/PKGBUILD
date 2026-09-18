@@ -1,0 +1,52 @@
+# Maintainer: Peilin Fan <peilin.fan@foxmail.com>
+pkgname=pi-dnr
+pkgver=0.85.1
+pkgrel=1
+pkgdesc='Pi coding agent packaged as a single application for the shared dnr runtime'
+arch=('x86_64')
+url='https://github.com/fansion314/pi'
+license=('MIT')
+# Both dnr and dnr-webview provide dnr/dnc; depends also applies at build time.
+depends=('dnr>=0.1.0' 'bash' 'glibc' 'libxcb' 'ripgrep' 'fd')
+makedepends=('git' 'nodejs>=22.19.0' 'npm')
+optdepends=('git: install Git-based extensions and work with repositories'
+            'npm: install dependencies for npm and Git extensions'
+            'wl-clipboard: Wayland clipboard support'
+            'xclip: X11 clipboard writes and fallback reads')
+provides=("pi-coding-agent=$pkgver")
+conflicts=('pi-coding-agent')
+# Preserve the executable shell/ZIP container byte-for-byte.
+options=('!strip' '!debug')
+source=("pi::git+https://github.com/fansion314/pi.git#tag=v${pkgver}")
+sha256sums=('SKIP')
+
+prepare() {
+    cd "$srcdir/pi"
+    local version
+    version=$(node -p 'JSON.parse(require("fs").readFileSync("packages/coding-agent/package.json", "utf8")).version')
+    if [[ "$version" != "$pkgver" ]]; then
+        printf 'Expected pi %s, found %s\n' "$pkgver" "$version" >&2
+        return 1
+    fi
+    npm ci --ignore-scripts --no-audit --no-fund
+    npm run hydrate:model-data
+}
+
+build() {
+    cd "$srcdir/pi"
+    # Rebuild the small clipboard helper; use the already installed dnr/dnc.
+    npm --prefix packages/tui run build:native:linux
+    node scripts/build-dnp.mjs --dnc dnc --output "$srcdir/pi/dist/pi.dnp"
+}
+
+check() {
+    cd "$srcdir/pi"
+    PI_DNP_TEST_PACKAGE="$srcdir/pi/dist/pi.dnp" node --test scripts/dnp-smoke.test.mjs
+}
+
+package() {
+    cd "$srcdir/pi"
+    install -Dm755 dist/pi.dnp "$pkgdir/usr/bin/pi"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    install -Dm644 packages/coding-agent/README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+}

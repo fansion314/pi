@@ -61,6 +61,14 @@ npm run check         # Lint, format, and type check
 ./pi-test.sh         # Run pi from sources (can be run from any directory)
 ```
 
+## Arch Linux / CachyOS with dnr
+
+The [`pi-dnr` AUR recipe](packaging/aur/pi-dnr/README.md) builds this fork as a
+single `.dnp` application and installs the `pi` command. It uses an already
+installed `dnr` or `dnr-webview` package for both building and running; it does
+not build or bundle Deno/V8. Package versions follow upstream Pi, starting at
+`0.85.1`. See the recipe's README for dependencies and installation instructions.
+
 ## Building standalone binaries from release source
 
 GitHub releases include a versioned source archive covered by the release's `SHA256SUMS` file. Extract it and run the same build script used for the official standalone binaries:
