@@ -11,7 +11,8 @@ const repoRoot = resolve(scriptDir, "..");
 const codingAgentDir = join(repoRoot, "packages", "coding-agent");
 const aiDistDir = join(repoRoot, "packages", "ai", "dist");
 const codingAgentDistDir = join(codingAgentDir, "dist");
-const bundleDir = join(codingAgentDistDir, "bundle");
+const dnpBundleDir = process.env.PI_DNP_BUNDLE_DIR;
+const bundleDir = dnpBundleDir ? resolve(dnpBundleDir) : join(codingAgentDistDir, "bundle");
 const banner = {
 	js: 'import { createRequire as __piCreateRequire } from "node:module"; const require = __piCreateRequire(import.meta.url);',
 };
@@ -86,11 +87,14 @@ function commonBuildOptions() {
 		banner,
 		bundle: true,
 		define: { PI_BUNDLED_NODE: "true" },
-		external: ["@earendil-works/chord", "@silvia-odwyer/photon-node"],
+		external: dnpBundleDir
+			? ["@silvia-odwyer/photon-node"]
+			: ["@earendil-works/chord", "@silvia-odwyer/photon-node"],
 		format: "esm",
 		legalComments: "none",
 		logLevel: "warning",
 		metafile: true,
+		minify: !!dnpBundleDir,
 		minifySyntax: true,
 		minifyWhitespace: true,
 		platform: "node",
