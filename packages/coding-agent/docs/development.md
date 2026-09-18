@@ -39,6 +39,7 @@ and the shared `dnr` executable runs it. It replaces the former `build:binary:de
 and `deno compile` workflow. The existing Bun release build is unchanged.
 
 Install Node.js and put the dnr project's `dist/dnc` and `dist/dnr` on `PATH`.
+The runtime must support ZIP native library extraction (added on 2026-09-18).
 From the Pi repository root:
 
 ```bash
@@ -65,18 +66,18 @@ Output:
 packages/coding-agent/dist/dnr/
 ├── pi.dnp
 ├── pi.dnp.files.txt
-├── pi.dnp.tree.txt
-└── native/
-    └── darwin/prebuilds/darwin-arm64/darwin-platform.node
+└── pi.dnp.tree.txt
 ```
 
-Linux produces `native/linux/prebuilds/linux-x64/linux-platform-x11.node` instead.
-dnr cannot load native libraries from ZIP, so keep the `native/` directory beside `pi.dnp`.
-The application includes no native libraries in its ZIP and never extracts them at startup.
-The optional native clipboard/helper functionality uses the sidecar; Linux Wayland clipboard
-commands still need the corresponding system tools.
+Only `pi.dnp` is needed for deployment; the text files describe its ZIP contents.
+The ZIP includes `native/darwin/prebuilds/darwin-arm64/darwin-platform.node` on macOS,
+or `native/linux/prebuilds/linux-x64/linux-platform-x11.node` on Linux. On first load,
+dnr extracts the requested native library to a private system temporary directory and reuses
+it within the process. The host cleans it up on exit; no files are extracted beside the package.
+The runtime's temporary directory must be writable and permit dynamic library loading.
+Linux Wayland clipboard commands still need the corresponding system tools.
 
-Run or install both artifacts together (requires `dnr` on `PATH`):
+Run or install the single package (requires the updated `dnr` on `PATH`):
 
 ```bash
 packages/coding-agent/dist/dnr/pi.dnp --version
@@ -84,12 +85,12 @@ packages/coding-agent/dist/dnr/pi.dnp
 
 install -d "$HOME/.local/lib/pi-dnr" "$HOME/.local/bin"
 install -m 755 packages/coding-agent/dist/dnr/pi.dnp "$HOME/.local/lib/pi-dnr/pi.dnp"
-cp -R packages/coding-agent/dist/dnr/native "$HOME/.local/lib/pi-dnr/"
 ln -sfn "$HOME/.local/lib/pi-dnr/pi.dnp" "$HOME/.local/bin/pi"
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-Rebuild and replace the package and matching sidecar to update. The dnp runs with dnr's full
+Rebuild and replace `pi.dnp` to update. The `native/` directory from the former sidecar build
+is no longer needed. The dnp runs with dnr's full
 permissions, preserves the caller's working directory, and needs no Node.js or stock Deno
 installation to execute. Keep it in a dedicated directory because dnr overlays ZIP paths on
 the package's real parent directory. Extension-managed dependencies and external tools retain
@@ -101,16 +102,19 @@ Run the offline artifact smoke test from the repository root:
 PI_DNP_TEST_PACKAGE=packages/coding-agent/dist/dnr/pi.dnp node --test scripts/dnp-smoke.test.mjs
 ```
 
-It copies the package and native helper outside the checkout and tests a TypeScript extension,
+It copies only the package outside the checkout and tests a TypeScript extension,
 the two DeepSeek catalogs, Photon resizing, a tool call through a local faux provider, session
 storage, HTML export, CLI startup, and caller cwd. It does not contact paid model APIs.
 It also compares the emitted file inventory against the ZIP central directory and runs through
-a symlink with only dnr and system commands on PATH.
+a symlink with only dnr and system commands on PATH. It verifies the embedded native helper
+loads, repeated loads reuse the module, the extracted bytes match the ZIP, the temporary directory
+is private, and dnr cleans it up after exit. The directory beside the package stays unchanged.
 
 Validated on macOS ARM64 on 2026-09-18 using Pi 0.85.1 and dnc 0.1.0: the artifact smoke
-test and `npm run check` passed. A separate real PTY run accepted a typed prompt, displayed
-the faux provider's reply, and exited with Ctrl-D. The native helper loaded successfully;
-clipboard contents were not changed. Linux execution and paid-provider requests were not tested.
+test and `npm run check` passed, including single-file deployment and native temporary-file
+cleanup with the updated dnr. The earlier sidecar build also passed a real PTY run with a typed
+prompt, faux reply, and Ctrl-D exit. Clipboard contents were not changed. Linux execution and
+paid-provider requests were not tested.
 
 ## Forking / Rebranding
 

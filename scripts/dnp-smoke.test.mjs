@@ -6,6 +6,7 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
+	readdirSync,
 	realpathSync,
 	rmSync,
 	symlinkSync,
@@ -21,7 +22,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packagePath = process.env.PI_DNP_TEST_PACKAGE;
 
 test(
-	"dnp runs outside the checkout with native helpers, extensions, image processing, tools, and HTML export",
+	"single-file dnp runs outside the checkout and cleans up extracted native helpers",
 	{
 		skip: !packagePath && "Set PI_DNP_TEST_PACKAGE to the built pi.dnp",
 		timeout: 60000,
@@ -32,9 +33,11 @@ test(
 			const app = join(temp, "app");
 			const cwd = join(temp, "caller");
 			const bin = join(temp, "bin");
+			const runtimeTmp = join(temp, "runtime-tmp");
 			mkdirSync(app);
 			mkdirSync(cwd);
 			mkdirSync(bin);
+			mkdirSync(runtimeTmp);
 			const dnr = (process.env.PATH ?? "")
 				.split(delimiter)
 				.map((path) => join(path, "dnr"))
@@ -54,6 +57,7 @@ test(
 			const end = zip.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
 			assert.ok(end > zipStart);
 			const count = zip.readUInt16LE(end + 10);
+			const nativePath = `native/${process.platform}/prebuilds/${process.platform}-${process.arch}/${process.platform}-platform${process.platform === "linux" ? "-x11" : ""}.node`;
 			let offset = zipStart + zip.readUInt32LE(end + 16);
 			const entries = [];
 			for (let index = 0; index < count; index++) {
@@ -62,7 +66,6 @@ test(
 				const name = zip.toString("utf8", offset + 46, offset + 46 + nameLength);
 				const method = zip.readUInt16LE(offset + 10);
 				assert.ok(method === 0 || method === 93, "dnp uses stored or Zstd entries");
-				assert.doesNotMatch(name, /\.(node|dylib|so)$/);
 				if (!name.startsWith("examples/") && !name.startsWith("docs/")) assert.doesNotMatch(name, /\.(ts|tsx)$/);
 				entries.push(name);
 				offset += 46 + nameLength + zip.readUInt16LE(offset + 30) + zip.readUInt16LE(offset + 32);
@@ -73,7 +76,8 @@ test(
 			);
 			assert.ok(entries.includes(".dnr/manifest.json"));
 			assert.ok(entries.includes("chunks/image-resize-worker.js"));
-			cpSync(join(dirname(source), "native"), join(app, "native"), { recursive: true });
+			assert.deepEqual(entries.filter((entry) => /\.(node|dylib|so)$/.test(entry)), [nativePath]);
+			assert.deepEqual(readdirSync(app), ["pi.dnp"], "only the dnp is deployed");
 			const extension = join(cwd, "extension.ts");
 			cpSync(join(repoRoot, "scripts/fixtures/dnp-extension.ts"), extension);
 			// A compressible large PNG forces the real Photon WASM resize path.
@@ -107,11 +111,13 @@ test(
 			const env = {
 				PATH: [bin, "/usr/bin", "/bin"].join(delimiter),
 				TERM: "xterm-256color",
+				TMPDIR: runtimeTmp,
 				PI_OFFLINE: "1",
 				PI_TELEMETRY: "0",
 				PI_CODING_AGENT_DIR: join(temp, "config"),
 				DNP_TEST_CWD: cwd,
 				DNP_TEST_PACKAGE_DIR: app,
+				DNP_TEST_NATIVE_PATH: nativePath,
 			};
 			function run(args) {
 				const result = spawnSync(launcher, args, {
@@ -123,6 +129,11 @@ test(
 				});
 				assert.equal(result.status, 0, `${result.error ?? ""}\n${result.stdout}\n${result.stderr}`);
 				assert.doesNotMatch(result.stderr, /Failed to load extension|Error in extension|AssertionError/);
+				assert.deepEqual(
+					readdirSync(runtimeTmp).filter((name) => name.startsWith("dnr-native-")),
+					[],
+					"dnr must clean up extracted native libraries on exit",
+				);
 				return result.stdout;
 			}
 			const version = JSON.parse(readFileSync(join(repoRoot, "packages/coding-agent/package.json"), "utf8")).version;
@@ -154,9 +165,9 @@ test(
 			const html = join(cwd, "session.html");
 			run(["--export", session, html]);
 			assert.match(readFileSync(html, "utf8"), /<!DOCTYPE html>/i);
-			assert.ok(!existsSync(join(app, "node_modules")), "runtime must not extract dependencies");
+			assert.deepEqual(readdirSync(app), ["pi.dnp"], "runtime must not extract files beside the package");
 			console.log(
-				"Verified dnp CLI, external TypeScript extension, dual DeepSeek catalogs, native helper, Photon resize, bash tool, session storage, HTML export, and caller cwd.",
+				"Verified single-file deployment, native extraction and cleanup, CLI, TypeScript extension, dual DeepSeek catalogs, Photon resize, bash tool, session storage, HTML export, and caller cwd.",
 			);
 		} finally {
 			rmSync(temp, { recursive: true, force: true });

@@ -31,7 +31,7 @@ const { values } = parseArgs({
 
 if (values.help) {
 	console.log(
-		"Usage: node scripts/build-dnp.mjs [--output path/to/pi.dnp] [--dnc path/to/dnc]\nRequires installed dependencies, hydrated model data, and dnc. Runs TypeScript compilation, minified bundling, and dnc packaging. Native helpers are written to native/ beside the package.",
+		"Usage: node scripts/build-dnp.mjs [--output path/to/pi.dnp] [--dnc path/to/dnc]\nRequires installed dependencies, hydrated model data, and dnc. Runs TypeScript compilation, minified bundling, and dnc packaging. Native helpers are embedded; running requires dnr with ZIP native library extraction support.",
 	);
 	process.exit(0);
 }
@@ -69,6 +69,11 @@ try {
 	run(process.execPath, [join(repoRoot, "scripts/build-coding-agent-bundle.mjs")], {
 		env: { ...process.env, PI_DNP_BUNDLE_DIR: appDir },
 	});
+	// dnr materializes this library in its private temporary directory on first load.
+	// Keep the archive path used by TUI's existing native module resolver.
+	const nativeDestination = join(appDir, nativePath);
+	mkdirSync(dirname(nativeDestination), { recursive: true });
+	cpSync(nativeSource, nativeDestination);
 	for (const [path, pattern] of [
 		["modes/interactive/theme", /\.json$/],
 		["modes/interactive/assets", /\.png$/],
@@ -156,8 +161,6 @@ try {
 			const path = join(dir, entry.name);
 			if (entry.isDirectory()) collect(path);
 			else {
-				if (/\.(node|dylib|so)$/.test(entry.name))
-					throw new Error(`Native library cannot be placed in dnp: ${path}`);
 				paths.push(relative(appDir, path));
 			}
 		}
@@ -166,9 +169,6 @@ try {
 	mkdirSync(dirname(output), { recursive: true });
 	const stagedOutput = join(staging, "pi.dnp");
 	run(values.dnc, [appDir, "--entry", "cli.js", "--app-id", "org.pi.coding-agent", "--output", stagedOutput]);
-	const nativeOutput = join(dirname(output), nativePath);
-	mkdirSync(dirname(nativeOutput), { recursive: true });
-	cpSync(nativeSource, nativeOutput);
 	// Copy to the destination filesystem before atomic replacement.
 	const pendingOutput = `${output}.tmp-${process.pid}`;
 	try {
@@ -197,7 +197,7 @@ try {
 	renderTree(tree, "");
 	writeFileSync(`${output}.tree.txt`, lines.join("\n") + "\n");
 	console.log(
-		`Built ${output} (${statSync(output).size} bytes)\nNative helper: ${nativeOutput}\nZIP tree: ${output}.tree.txt`,
+		`Built ${output} (${statSync(output).size} bytes)\nEmbedded native helper: ${nativePath}\nZIP tree: ${output}.tree.txt`,
 	);
 } finally {
 	rmSync(staging, { recursive: true, force: true });

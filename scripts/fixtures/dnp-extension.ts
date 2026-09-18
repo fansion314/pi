@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join } from "node:path";
 import { fauxAssistantMessage, fauxProvider, fauxToolCall } from "@earendil-works/pi-ai";
 import { getModel } from "@earendil-works/pi-ai/compat";
@@ -20,10 +21,22 @@ export default function (pi: ExtensionAPI) {
 			assert.equal(ctx.cwd, process.env.DNP_TEST_CWD);
 			if (process.platform === "darwin") {
 				const clipboard = getNativeClipboard();
-				assert.ok(clipboard, "native helper must load from the sidecar");
+				assert.ok(clipboard, "native helper must load from the ZIP; update dnr if unavailable");
 				assert.equal(typeof clipboard.getText, "function");
 				assert.equal(typeof clipboard.getImage, "function");
 			}
+			const nativePath = process.env.DNP_TEST_NATIVE_PATH!;
+			const packagedNativePath = join(process.env.DNP_TEST_PACKAGE_DIR!, nativePath);
+			const require = createRequire(import.meta.url);
+			const helper = require(packagedNativePath) as { getText: unknown; getImage: unknown };
+			assert.equal(typeof helper.getText, "function");
+			assert.equal(typeof helper.getImage, "function");
+			assert.equal(require(packagedNativePath), helper, "repeated loads must reuse the native module");
+			const extractedDirs = readdirSync(process.env.TMPDIR!).filter((name) => name.startsWith("dnr-native-"));
+			assert.equal(extractedDirs.length, 1, "dnr must extract the library into one private directory");
+			const extractedDir = join(process.env.TMPDIR!, extractedDirs[0]);
+			assert.equal(statSync(extractedDir).mode & 0o777, 0o700);
+			assert.deepEqual(readFileSync(join(extractedDir, nativePath)), readFileSync(packagedNativePath));
 			const result = await createReadTool(ctx.cwd).execute("image", { path: "large.png" });
 			assert.ok(
 				result.content.some((item) => item.type === "image"),
