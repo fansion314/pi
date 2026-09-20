@@ -89,6 +89,26 @@ tests. A real isolated PTY accepted input, ran a faux-provider bash call, showed
 the reply and exited 0. No paid model request was made. macOS native execution
 was not performed on this Linux host. Logs: `../dnr/dist/validation-pi-0.86.1/`.
 
+### Published artifact and local installation
+
+[Actions run 35523032268](https://github.com/fansion314/pi/actions/runs/35523032268)
+completed successfully and published
+[Pi DNR 0.86.1-1](https://github.com/fansion314/pi/releases/tag/pi-dnr-v0.86.1-1).
+The recorded Arch build environment contains standalone dnc 0.2.0 and no dnr,
+CEF, GTK or WebKitGTK packages.
+
+Both the public pacman archive and portable DNP were downloaded and SHA-256
+verified. The binary recipe produced `pi-dnr-bin-0.86.1-1` from those assets;
+the payload and sidecar passed offline smoke tests, and the downloaded DNP
+passed the isolated PTY test. HTTP downloads do not retain the executable bit:
+use `chmod +x pi.dnp` for direct execution, or invoke `dnr pi.dnp`.
+
+The local system was upgraded using `paru -U`. `pi --version` reports 0.86.1,
+`pacman -Qkk pi-dnr-bin` reports 41 files with none altered, and the installed
+DNP is byte-identical to the release. Native groups remain under `/usr/lib/pi`,
+with `/usr/bin/pi` as the relative symlink. Tests use isolated config directories;
+existing user configuration and sessions are preserved.
+
 ## Historical v2 validation (2026-09-21)
 
 On CachyOS x86_64, with dnc/dnr 0.2.0:
