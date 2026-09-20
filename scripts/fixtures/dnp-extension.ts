@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { readFileSync, statSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { fauxAssistantMessage, fauxProvider, fauxToolCall } from "@earendil-works/pi-ai";
@@ -32,11 +32,9 @@ export default function (pi: ExtensionAPI) {
 			assert.equal(typeof helper.getText, "function");
 			assert.equal(typeof helper.getImage, "function");
 			assert.equal(require(packagedNativePath), helper, "repeated loads must reuse the native module");
-			const extractedDirs = readdirSync(process.env.TMPDIR!).filter((name) => name.startsWith("dnr-native-"));
-			assert.equal(extractedDirs.length, 1, "dnr must extract the library into one private directory");
-			const extractedDir = join(process.env.TMPDIR!, extractedDirs[0]);
-			assert.equal(statSync(extractedDir).mode & 0o777, 0o700);
-			assert.deepEqual(readFileSync(join(extractedDir, nativePath)), readFileSync(packagedNativePath));
+			const materialized = process.env.DNP_TEST_MATERIALIZED_PATH!;
+			assert.equal(statSync(materialized).mode & 0o222, 0, "native cache payload must be read-only");
+			assert.deepEqual(readFileSync(materialized), readFileSync(packagedNativePath));
 			const result = await createReadTool(ctx.cwd).execute("image", { path: "large.png" });
 			assert.ok(
 				result.content.some((item) => item.type === "image"),

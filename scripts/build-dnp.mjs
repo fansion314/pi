@@ -3,6 +3,7 @@
 import { spawnSync } from "node:child_process";
 import {
 	cpSync,
+	chmodSync,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
@@ -14,16 +15,18 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { transform } from "esbuild";
+import { archiveEntries, nativeTargets, readDnp } from "./dnp-package.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packageDir = join(repoRoot, "packages/coding-agent");
 const { values } = parseArgs({
 	options: {
 		output: { type: "string" },
+		target: { type: "string", default: "all" },
 		dnc: { type: "string", default: process.env.DNC_BIN ?? "dnc" },
 		help: { type: "boolean", default: false },
 	},
@@ -31,19 +34,18 @@ const { values } = parseArgs({
 
 if (values.help) {
 	console.log(
-		"Usage: node scripts/build-dnp.mjs [--output path/to/pi.dnp] [--dnc path/to/dnc]\nRequires installed dependencies, hydrated model data, and dnc. Runs TypeScript compilation, minified bundling, and dnc packaging. Native helpers are embedded; running requires dnr with ZIP native library extraction support.",
+		"Usage: node scripts/build-dnp.mjs [--output path/to/pi.dnp] [--dnc path/to/dnc] [--target all|linux-x64|darwin-arm64]\nRequires installed dependencies, hydrated model data, and dnc. Runs TypeScript compilation, minified bundling, and dnc packaging. Requires dnc >= 0.2.0 and libarchive (bsdtar on Linux). The default v2 package contains Linux x64 and macOS ARM64 native groups; running requires dnr >= 0.2.0.",
 	);
 	process.exit(0);
 }
 
-const target = `${process.platform}-${process.arch}`;
-if (target !== "darwin-arm64" && target !== "linux-x64") {
-	throw new Error(`dnr supports darwin-arm64 and linux-x64; this host is ${target}.`);
+const targets = values.target === "all" ? Object.keys(nativeTargets) : [values.target];
+for (const target of targets) {
+	if (!nativeTargets[target]) throw new Error(`Unsupported target: ${target}`);
+	const source = join(repoRoot, "packages/tui", nativeTargets[target].path);
+	if (!existsSync(source)) throw new Error(`Missing native helper: ${source}`);
 }
 const output = resolve(values.output ?? join(packageDir, "dist/dnr/pi.dnp"));
-const nativePath = `native/${process.platform}/prebuilds/${target}/${process.platform}-platform${process.platform === "linux" ? "-x11" : ""}.node`;
-const nativeSource = join(repoRoot, "packages/tui", nativePath);
-if (!existsSync(nativeSource)) throw new Error(`Missing native helper: ${nativeSource}`);
 
 function run(command, args, options = {}) {
 	const result = spawnSync(command, args, { cwd: repoRoot, stdio: "inherit", ...options });
@@ -51,7 +53,12 @@ function run(command, args, options = {}) {
 	if (result.status !== 0) throw new Error(`${command} failed (${result.signal ?? result.status}).`);
 }
 
-run(values.dnc, ["--version"]);
+const version = spawnSync(values.dnc, ["--version"], { encoding: "utf8" });
+if (version.error) throw version.error;
+const parsed = /^dnc (\d+)\.(\d+)\.(\d+)/.exec(version.stdout ?? "");
+if (version.status !== 0 || !parsed || (Number(parsed[1]) === 0 && Number(parsed[2]) < 2)) {
+	throw new Error("dnc >= 0.2.0 is required for v2 native groups.");
+}
 // Use the upstream TS compiler to rewrite .ts imports and emit real JavaScript.
 // The offline AI build validates generated catalogs instead of fetching at build time.
 for (const name of ["chord", "tui", "telemetry", "ai", "agent", "coding-agent"]) {
@@ -69,11 +76,29 @@ try {
 	run(process.execPath, [join(repoRoot, "scripts/build-coding-agent-bundle.mjs")], {
 		env: { ...process.env, PI_DNP_BUNDLE_DIR: appDir },
 	});
-	// dnr materializes this library in its private temporary directory on first load.
-	// Keep the archive path used by TUI's existing native module resolver.
-	const nativeDestination = join(appDir, nativePath);
-	mkdirSync(dirname(nativeDestination), { recursive: true });
-	cpSync(nativeSource, nativeDestination);
+	const config = {
+		schemaVersion: 1,
+		targets: {},
+		groups: [
+			{
+				id: "example_doom",
+				files: ["examples/extensions/doom-overlay/doom/**"],
+				native: { executables: ["examples/extensions/doom-overlay/doom/build.sh"] },
+			},
+		],
+	};
+	for (const target of targets) {
+		const native = nativeTargets[target];
+		config.targets[native.id] = native.target;
+		config.groups.push({
+			id: `clipboard_${native.id}`,
+			files: [],
+			variants: { [native.id]: [{ from: join(repoRoot, "packages/tui", native.path), to: native.path }] },
+			native: { addons: [{ path: native.path, napi: 8 }] },
+		});
+	}
+	const configPath = join(staging, "dnr.package.json");
+	writeFileSync(configPath, JSON.stringify(config, null, 2));
 	for (const [path, pattern] of [
 		["modes/interactive/theme", /\.json$/],
 		["modes/interactive/assets", /\.png$/],
@@ -91,6 +116,9 @@ try {
 			filter: (source) => !["node_modules", "dist", ".git"].includes(source.split("/").at(-1)),
 		});
 	}
+	// This checked-in example WASM has an executable bit, but is data loaded by
+	// JavaScript, not an OS executable. Preserve the resource with data permissions.
+	chmodSync(join(appDir, "examples/extensions/doom-overlay/doom/build/doom.wasm"), 0o644);
 	cpSync(join(repoRoot, "LICENSE"), join(appDir, "LICENSE"));
 	const pkg = JSON.parse(readFileSync(join(packageDir, "package.json"), "utf8"));
 	writeFileSync(
@@ -155,20 +183,22 @@ try {
 		}
 	}
 
-	const paths = [];
-	function collect(dir) {
-		for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
-			const path = join(dir, entry.name);
-			if (entry.isDirectory()) collect(path);
-			else {
-				paths.push(relative(appDir, path));
-			}
-		}
-	}
-	collect(appDir);
+	// npm archives occasionally mark notices executable; they remain text assets.
+	for (const file of readdirSync(licenseDir)) chmodSync(join(licenseDir, file), 0o644);
 	mkdirSync(dirname(output), { recursive: true });
 	const stagedOutput = join(staging, "pi.dnp");
-	run(values.dnc, [appDir, "--entry", "cli.js", "--app-id", "org.pi.coding-agent", "--output", stagedOutput]);
+	run(values.dnc, [
+		appDir,
+		"--entry",
+		"cli.js",
+		"--app-id",
+		"org.pi.coding-agent",
+		"--output",
+		stagedOutput,
+		"--package-config",
+		configPath,
+	]);
+	readDnp(stagedOutput);
 	// Copy to the destination filesystem before atomic replacement.
 	const pendingOutput = `${output}.tmp-${process.pid}`;
 	try {
@@ -177,7 +207,12 @@ try {
 	} finally {
 		rmSync(pendingOutput, { force: true });
 	}
-	const entries = [".dnr/manifest.json", ...paths].sort();
+	const entries = archiveEntries(output)
+		.toString("utf8")
+		.trim()
+		.split("\n")
+		.filter((name) => !name.endsWith("/"))
+		.sort();
 	writeFileSync(`${output}.files.txt`, entries.join("\n") + "\n");
 	const tree = Object.create(null);
 	for (const entry of entries) {
@@ -197,7 +232,7 @@ try {
 	renderTree(tree, "");
 	writeFileSync(`${output}.tree.txt`, lines.join("\n") + "\n");
 	console.log(
-		`Built ${output} (${statSync(output).size} bytes)\nEmbedded native helper: ${nativePath}\nZIP tree: ${output}.tree.txt`,
+		`Built ${output} (${statSync(output).size} bytes)\nNative targets: ${targets.join(", ")}\nZIP tree: ${output}.tree.txt`,
 	);
 } finally {
 	rmSync(staging, { recursive: true, force: true });
