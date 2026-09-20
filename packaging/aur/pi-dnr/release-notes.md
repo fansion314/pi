@@ -1,25 +1,26 @@
-# Pi DNR v0.86.0
+# Pi DNR 0.86.0-2
 
-Pi 0.86.0 packaged as a single executable application for the shared dnr runtime.
+Packaging update for upstream Pi 0.86.0; no npm release or application version bump.
+This fork retains DeepSeek Responses and the separate DeepSeek completions catalog.
 
-Synchronized with [upstream Pi v0.86.0](https://github.com/earendil-works/pi/releases/tag/v0.86.0),
-including prompt cache warming, `/bug` reports, the offline Radius catalog, and
-faster session discovery. See the upstream release notes for extension API changes.
-This fork retains DeepSeek Responses and the separate `deepseek-completions` provider.
+- `pi.dnp` uses format v2 and contains explicitly declared Linux x64 glibc and
+  macOS ARM64 native groups. Running requires dnr 0.2.0 or newer.
+- `pi-dnr-0.86.0-2-x86_64.pkg.tar.zst` installs the DNP and verified Linux sidecar
+  under `/usr/lib/pi`, with `/usr/bin/pi` as a relative symlink. Pacman owns both.
+- Building uses standalone dnc; the Arch build container no longer installs
+  either GUI runtime or CEF/GTK/WebKitGTK just to package the CLI application.
+- Cold launches prepare persistent groups; warm launches reuse them. Arch
+  installation supplies adjacent groups in advance and avoids a user cache.
 
-- `pi-dnr-0.86.0-1-x86_64.pkg.tar.zst` installs the `pi` command on Arch Linux / CachyOS.
-- Choose any one of `dnr`, `dnr-webview`, `dnr-bin` or `dnr-webview-bin` (version 0.1.0 or newer).
-- The `pi-dnr-bin` recipe downloads this prebuilt package without compiling Pi or the runtime.
-- The package includes the application, native helper, assets and dependency license notices; it does not bundle a runtime.
+Install one runtime provider satisfying `dnr>=0.2.0`, then install the pacman
+archive or use the `pi-dnr-bin` recipe. Application packages contain no runtime.
+Checksums accompany both the pacman package and the portable DNP.
 
-Install your preferred runtime first, then install this package with
-`sudo pacman -U pi-dnr-0.86.0-1-x86_64.pkg.tar.zst`, or use the local/AUR recipe.
-Checksums and build environment records accompany the release assets.
+CI verifies package structure, hashes, sidecar layout and Node-API loading without
+dnr. Full local runtime smoke tests cover CLI, TypeScript extensions, Photon image
+resizing, faux-provider bash calls, sessions, HTML export and persistent caches.
+The macOS payload is included and verified as package content; Linux testing does
+not establish native macOS runtime compatibility.
 
-CI uses the official Arch Linux container and prebuilt dnr packages from GitHub.
-The application is tested against both system-CEF and WebView with the offline
-DNP smoke test: startup, native extraction/cleanup, extensions, image resizing,
-shell tools, session storage and HTML export. It does not call a paid model API.
-
-This is the DNR distribution of upstream Pi 0.86.0; it does not publish npm
-packages or change upstream Pi version numbers.
+This packaging release uses tag `pi-dnr-v0.86.0-2`; the existing upstream-style
+`v0.86.0` tag and release remain unchanged.

@@ -1,50 +1,60 @@
 # pi-dnr-bin
 
-Prebuilt Pi 0.86.0 for Linux x86_64, downloaded from this fork's GitHub Release.
-It installs `/usr/bin/pi` without compiling Pi, Deno or V8.
+Prebuilt Pi 0.86.0, packaging revision 2, for Linux x86_64. The recipe downloads
+`pi-dnr-0.86.0-2-x86_64.pkg.tar.zst` and its checksum from packaging release
+`pi-dnr-v0.86.0-2`. That release must be published before this binary recipe can
+be used; a branch push does not create its assets.
 
-First install exactly one runtime package:
+It verifies the exact archive name and SHA-256 before extraction, then preserves
+the application and already prepared native sidecar under `/usr/lib/pi/`.
+`/usr/bin/pi` is a relative symlink. It does not compile, run an installer, or
+unpack native libraries into the executable search path. Only the Linux native
+variant is prepared; the DNP itself also contains the macOS ARM64 variant.
 
-| Runtime package | Backend | Runtime compilation |
-| --- | --- | --- |
-| `dnr` | system CEF | Yes |
-| `dnr-webview` | WebKitGTK | Yes |
-| `dnr-bin` | system CEF | No |
-| `dnr-webview-bin` | WebKitGTK | No |
-
-All satisfy `dnr>=0.1.0`. An already installed provider is reused; Pi does not
-force a backend change. For local recipes that are not registered on AUR, install
-your chosen runtime first so pacman can resolve the dependency normally.
+Choose any runtime provider satisfying `dnr>=0.2.0`: `dnr`, `dnr-webview`,
+`dnr-bin` or `dnr-webview-bin`. Runtime packages no longer include dnc; neither
+dnc nor Node.js is required for ordinary use of this prebuilt package.
 
 ```sh
 cd packaging/aur/pi-dnr-bin
 makepkg -si
-# Or: paru -Bi .
 ```
 
-The recipe downloads `pi-dnr-0.86.0-1-x86_64.pkg.tar.zst` and its `.sha256` from
-the matching GitHub Release. It checks the archive name and SHA-256 before
-extracting files and regenerates pacman metadata for the `pi-dnr-bin` name.
-The checksum comes from the same HTTPS release; it is not independently signed
-or hardcoded into the tag because CI builds the archive after tagging.
+The package provides `pi-dnr` and `pi-coding-agent`, conflicts with their other
+implementations, and preserves `~/.pi`. Optional npm/Git support extension
+installation; `wl-clipboard` and `xclip` support clipboard integration.
+A manual `/usr/local/bin/pi` may take precedence over the pacman-managed command.
 
-This package provides `pi-dnr` and `pi-coding-agent` and conflicts with their
-other implementations. It preserves existing `~/.pi` configuration and sessions.
-A manually installed `/usr/local/bin/pi` can take precedence over `/usr/bin/pi`.
+The source build container uses only standalone dnc and small build dependencies,
+without installing CEF/GTK/WebKitGTK. Structural and Node-API tests run there;
+full runtime smoke tests run separately on a host with dnr installed.
+See [the source recipe](../pi-dnr/README.md) for details and validation commands.
 
-Node.js/npm are not needed for ordinary use. Optional npm/Git are useful for
-installing extensions; optional `wl-clipboard` and `xclip` support clipboard
-integration. See [the source recipe](../pi-dnr/README.md) for more details.
+## v2 validation (2026-09-21)
 
-`release-dnr.yml` builds the source package in the official Arch container after
-a version-tag push. It installs prebuilt dnr from the dnr GitHub Release using
-pacman, without requiring AUR registration or skipping dependency checks. The
-same Pi application must pass offline smoke tests on CEF and WebView before
-publication. No npm package or upstream Pi announcement is published by this
-workflow.
+On CachyOS x86_64, with dnc/dnr 0.2.0:
 
++- Built a single DNP with both Linux x64 glibc and macOS ARM64 variants.
++- `npm run check` passed. Package tests verified platform declarations, content
++  hashes, read-only payload modes, preservation of an existing destination and
++  real Node-API loading.
++- Full offline smoke tests passed on both CEF and WebView, in cold/warm-cache
++  and pre-extracted-sidecar modes. Repeated runs preserved native inode/mtime;
++  sidecar mode did not create a user cache.
++- An isolated source snapshot ran real prepare/build/check/package hooks via
++  makepkg, using the standalone dnc. Local dependency lookup was explicitly
++  bypassed; this does not claim a clean-container build.
++- Both source and binary pacman packages preserve the `/usr/lib/pi` sidecar and
++  the relative `/usr/bin/pi` symlink. The binary recipe rejected a wrong digest
++  and a wrong checksum filename. The extracted package passed full runtime
++  smoke tests without regenerating its sidecar.
++
++macOS payloads were included and hash-checked, but were not executed on Linux.
++No system package, user configuration or paid provider was changed. Evidence is
++under `../dnr/dist/validation-v0.2.0/pi-*`; packaging CI runs on the next packaging
++tag, separately from the dnr runtime release.
 
-## Validation (2026-09-18)
+## Historical v1 validation (2026-09-18)
 
 Local validation used the previously built and tested `pi-dnr` package. A wrong
 checksum was rejected before extraction, the correct checksum passed, and a

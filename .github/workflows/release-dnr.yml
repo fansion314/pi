@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'pi-dnr-v[0-9]+.[0-9]+.[0-9]+-[0-9]+'
 
 permissions:
   contents: read
@@ -30,11 +31,11 @@ jobs:
           path: ${{ runner.temp }}/pi-dnr-cache/npm
           key: pi-dnr-npm-${{ hashFiles('package-lock.json') }}
           restore-keys: pi-dnr-npm-
-      - name: Build in the official Arch image using released dnr packages
+      - name: Build in the official Arch image using standalone dnc
         env:
           RELEASE_TAG: ${{ github.ref_name }}
           RELEASE_COMMIT: ${{ github.sha }}
-          DNR_VERSION: '0.1.0'
+          DNC_VERSION: '0.2.0'
         run: |
           mkdir -p "$RUNNER_TEMP/pi-dnr-cache" .artifacts/dnr-release
           docker pull ghcr.io/archlinux/archlinux:base-devel
@@ -46,7 +47,7 @@ jobs:
             --env "PI_BUILD_UID=$(id -u)" \
             --workdir /work \
             ghcr.io/archlinux/archlinux:base-devel \
-            bash scripts/ci/build-dnr-arch.sh "$RELEASE_TAG" "$RELEASE_COMMIT" "$DNR_VERSION" \
+            bash scripts/ci/build-dnr-arch.sh "$RELEASE_TAG" "$RELEASE_COMMIT" "$DNC_VERSION" \
             2>&1 | tee .artifacts/pi-dnr-build.log
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

@@ -1,14 +1,17 @@
 pkgbase = pi-dnr
 	pkgdesc = Pi coding agent packaged as a single application for the shared dnr runtime
 	pkgver = 0.86.0
-	pkgrel = 1
+	pkgrel = 2
 	url = https://github.com/fansion314/pi
 	arch = x86_64
 	license = MIT
 	makedepends = git
 	makedepends = nodejs>=22.19.0
 	makedepends = npm
-	depends = dnr>=0.1.0
+	makedepends = dnc>=0.2.0
+	makedepends = libxcb
+	makedepends = libarchive
+	depends = dnr>=0.2.0
 	depends = bash
 	depends = glibc
 	depends = libxcb
@@ -22,7 +25,7 @@ pkgbase = pi-dnr
 	conflicts = pi-coding-agent
 	options = !strip
 	options = !debug
-	source = pi::git+https://github.com/fansion314/pi.git#tag=v0.86.0
+	source = pi::git+https://github.com/fansion314/pi.git#commit=0d05e8d4c15a08915783671c8955e7e5892bf91b
 	sha256sums = SKIP
 
 pkgname = pi-dnr

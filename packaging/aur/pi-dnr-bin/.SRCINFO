@@ -1,11 +1,11 @@
 pkgbase = pi-dnr-bin
 	pkgdesc = Pi coding agent for the shared dnr runtime (prebuilt)
 	pkgver = 0.86.0
-	pkgrel = 1
+	pkgrel = 2
 	url = https://github.com/fansion314/pi
 	arch = x86_64
 	license = MIT
-	depends = dnr>=0.1.0
+	depends = dnr>=0.2.0
 	depends = bash
 	depends = glibc
 	depends = libxcb
@@ -19,11 +19,11 @@ pkgbase = pi-dnr-bin
 	provides = pi-coding-agent=0.86.0
 	conflicts = pi-dnr
 	conflicts = pi-coding-agent
-	noextract = pi-dnr-0.86.0-1-x86_64.pkg.tar.zst
+	noextract = pi-dnr-0.86.0-2-x86_64.pkg.tar.zst
 	options = !strip
 	options = !debug
-	source = https://github.com/fansion314/pi/releases/download/v0.86.0/pi-dnr-0.86.0-1-x86_64.pkg.tar.zst
-	source = https://github.com/fansion314/pi/releases/download/v0.86.0/pi-dnr-0.86.0-1-x86_64.pkg.tar.zst.sha256
+	source = https://github.com/fansion314/pi/releases/download/pi-dnr-v0.86.0-2/pi-dnr-0.86.0-2-x86_64.pkg.tar.zst
+	source = https://github.com/fansion314/pi/releases/download/pi-dnr-v0.86.0-2/pi-dnr-0.86.0-2-x86_64.pkg.tar.zst.sha256
 	sha256sums = SKIP
 	sha256sums = SKIP
 

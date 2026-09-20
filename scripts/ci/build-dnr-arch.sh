@@ -1,58 +1,51 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-tag=${1:?usage: build-dnr-arch.sh tag commit dnr-version}
+tag=${1:?usage: build-dnr-arch.sh tag commit dnc-version}
 commit=${2:?missing commit}
-dnr_version=${3:?missing dnr version}
-[[ $tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
-[[ $commit =~ ^[0-9a-f]{40}$ ]]
-[[ $dnr_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+dnc_version=${3:?missing dnc version}
+[[ $tag =~ ^(pi-dnr-)?v[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]]
+[[ $commit =~ ^[0-9a-f]{40}$ && $dnc_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 recipe="$root/packaging/aur/pi-dnr/PKGBUILD"
 stage="$root/.artifacts/ci-pi-dnr"
 output="$root/.artifacts/dnr-release"
-runtime="$stage/runtimes"
+packager="$stage/packager"
 
 if (( EUID == 0 )); then
     source "$recipe"
-    dependencies=()
-    for dependency in "${depends[@]}"; do
-        [[ $dependency == dnr* ]] || dependencies+=("$dependency")
+    build_dependencies=()
+    for dependency in "${makedepends[@]}"; do
+        [[ $dependency == dnc* ]] || build_dependencies+=("$dependency")
     done
-    pacman -Syu --noconfirm --needed base-devel git curl ca-certificates \
-        cef gtk3 libxi libx11 webkit2gtk-4.1 libsoup3 \
-        "${dependencies[@]}" "${makedepends[@]}"
-    mkdir -p "$runtime" "$stage/src" "$output" /cache/npm
-    for variant in dnr dnr-webview; do
-        archive="$variant-$dnr_version-1-x86_64.pkg.tar.zst"
-        url="https://github.com/fansion314/dnr/releases/download/v$dnr_version/$archive"
-        printf 'Downloading runtime package: %s\n' "$archive"
+    pacman -Syu --noconfirm --needed base-devel curl ca-certificates "${build_dependencies[@]}"
+    mkdir -p "$packager" "$stage/src" "$output" /cache/npm
+    archive="dnc-$dnc_version-1-x86_64.pkg.tar.zst"
+    url="https://github.com/fansion314/dnr/releases/download/v$dnc_version/$archive"
+    for suffix in '' '.sha256'; do
         curl --fail --location --silent --show-error --connect-timeout 20 --max-time 180 \
-            --retry 3 --retry-all-errors --retry-delay 5 --output "$runtime/$archive" "$url"
-        curl --fail --location --silent --show-error --connect-timeout 20 --max-time 60 \
-            --retry 3 --retry-all-errors --retry-delay 5 --output "$runtime/$archive.sha256" "$url.sha256"
-        (
-            cd "$runtime"
-            read -r digest filename extra < "$archive.sha256"
-            [[ $digest =~ ^[0-9a-f]{64}$ && $filename == "$archive" && -z $extra ]]
-            printf '%s  %s\n' "$digest" "$archive" | sha256sum --check
-        )
+            --retry 3 --retry-all-errors --retry-delay 5 --output "$packager/$archive$suffix" "$url$suffix"
     done
-    # Install the runtime into pacman's database; makepkg checks dependencies normally.
-    pacman -U --noconfirm "$runtime/dnr-$dnr_version-1-x86_64.pkg.tar.zst"
-    mkdir -p "$runtime/webview"
-    bsdtar -xf "$runtime/dnr-webview-$dnr_version-1-x86_64.pkg.tar.zst" \
-        -C "$runtime/webview" usr/bin
+    (
+        cd "$packager"
+        read -r digest filename extra < "$archive.sha256"
+        [[ $digest =~ ^[0-9a-f]{64}$ && $filename == "$archive" && -z $extra ]]
+        printf '%s  %s\n' "$digest" "$archive" | sha256sum --check
+    )
+    pacman -U --noconfirm "$packager/$archive"
     useradd --create-home --uid "${PI_BUILD_UID:?missing build uid}" builder
     chown -R builder:builder "$stage" "$output" /cache
     exec runuser -u builder -- env npm_config_cache=/cache/npm \
-        bash "$0" "$tag" "$commit" "$dnr_version"
+        bash "$0" "$tag" "$commit" "$dnc_version"
 fi
 
 cd "$root"
 [[ $(git rev-parse HEAD) == "$commit" ]]
 source "$recipe"
-[[ v$pkgver == "$tag" ]]
+[[ v$pkgver == "$tag" || pi-dnr-v$pkgver-$pkgrel == "$tag" ]]
+# Runtime dependencies belong on end-user machines. Check every build dependency
+# explicitly, then avoid makepkg pulling dnr and its GUI libraries into this job.
+pacman -T "${makedepends[@]}"
 export SOURCE_DATE_EPOCH
 SOURCE_DATE_EPOCH=$(git show -s --format=%ct "$commit")
 git archive "$commit" | tar -x -C "$stage/src" --one-top-level=pi
@@ -64,31 +57,28 @@ cp "$recipe" "$stage/PKGBUILD"
     prepare
 )
 cd "$stage"
-makepkg --noextract --force --noconfirm
+makepkg --noextract --force --noconfirm --nodeps
 package_file="pi-dnr-$pkgver-$pkgrel-x86_64.pkg.tar.zst"
 [[ -f $package_file ]]
-
-# Exercise the same DNP against the other backend without replacing the installed package.
-cd "$stage/src/pi"
-PATH="$runtime/webview/usr/bin:$PATH" PI_DNP_TEST_PACKAGE="$stage/src/pi/dist/pi.dnp" \
-    node --test scripts/dnp-smoke.test.mjs
-cd "$stage"
 mkdir -p installed
-bsdtar -xf "$package_file" -C installed usr/bin
-[[ $(PI_OFFLINE=1 PI_TELEMETRY=0 PI_CODING_AGENT_DIR="$stage/test-config" \
-    "$stage/installed/usr/bin/pi" --version) == "$pkgver" ]]
+bsdtar -xf "$package_file" -C installed usr/bin usr/lib/pi
+[[ $(readlink installed/usr/bin/pi) == ../lib/pi/pi.dnp ]]
+[[ -f installed/usr/lib/pi/pi.dnp && -d installed/usr/lib/pi/pi.dnp.unpacked ]]
 cp "$package_file" "$output/"
+# Also distribute the same cross-platform standalone application, without a runtime.
+cp "$stage/src/pi/dist/pi.dnp" "$output/pi.dnp"
+cp "$stage/src/pi/dist/pi.dnp.files.txt" "$output/pi.dnp.files.txt"
 (
     cd "$output"
     sha256sum "$package_file" > "$package_file.sha256"
+    sha256sum pi.dnp > pi.dnp.sha256
 )
 {
-    printf 'tag=%s\ncommit=%s\ndnr_version=%s\n' "$tag" "$commit" "$dnr_version"
+    printf 'tag=%s\ncommit=%s\ndnc_version=%s\n' "$tag" "$commit" "$dnc_version"
     cat /etc/os-release
     node --version
     npm --version
-    dnr --version
-    "$runtime/webview/usr/bin/dnr" --version
-    cat "$runtime/"*.sha256
+    dnc --version
+    cat "$packager/"*.sha256
     pacman -Q
 } > "$output/pi-dnr-build-environment.txt"

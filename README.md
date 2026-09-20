@@ -64,14 +64,14 @@ npm run check         # Lint, format, and type check
 
 ## Arch Linux / CachyOS with dnr
 
-The [`pi-dnr` AUR recipe](packaging/aur/pi-dnr/README.md) builds this fork as a
-single `.dnp` application and installs the `pi` command. The
-[`pi-dnr-bin` recipe](packaging/aur/pi-dnr-bin/README.md) instead downloads the
-prebuilt GitHub Release package. Both accept any one of `dnr`, `dnr-webview`,
-`dnr-bin` or `dnr-webview-bin` through the `dnr>=0.1.0` dependency. Neither builds
-or bundles Deno/V8. Package versions follow upstream Pi, starting at `0.85.1`.
-Tagged releases build in the official Arch container and test both runtime
-backends before publication. See the recipe READMEs for installation details.
+The [`pi-dnr` AUR recipe](packaging/aur/pi-dnr/README.md) uses standalone
+`dnc>=0.2.0` to build a v2 `.dnp` with Linux x64 and macOS ARM64 native groups.
+The Arch package installs the application and pre-extracted Linux groups under
+`/usr/lib/pi`; `/usr/bin/pi` is a symlink. Build-only environments do not need
+CEF, GTK, WebKitGTK or dnr. Running requires a provider of `dnr>=0.2.0`.
+The [`pi-dnr-bin` recipe](packaging/aur/pi-dnr-bin/README.md) repackages the
+corresponding GitHub packaging release. Neither application package bundles a
+runtime. See the recipe READMEs for dependency handling and validation scope.
 
 ## Building standalone binaries from release source
 
