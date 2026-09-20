@@ -1,7 +1,7 @@
 # pi-dnr for Arch Linux / CachyOS
 
-`pi-dnr` follows the upstream Pi version, starting at `0.85.1`. The recipe
-downloads `https://github.com/fansion314/pi.git` at tag `v0.85.1` and installs
+`pi-dnr` follows the upstream Pi version, currently `0.86.0`. The recipe
+downloads `https://github.com/fansion314/pi.git` at tag `v0.86.0` and installs
 the executable application package as `/usr/bin/pi`.
 
 Install any one of `dnr`, `dnr-webview`, `dnr-bin` or `dnr-webview-bin` before

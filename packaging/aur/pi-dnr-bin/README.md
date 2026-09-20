@@ -1,6 +1,6 @@
 # pi-dnr-bin
 
-Prebuilt Pi 0.85.1 for Linux x86_64, downloaded from this fork's GitHub Release.
+Prebuilt Pi 0.86.0 for Linux x86_64, downloaded from this fork's GitHub Release.
 It installs `/usr/bin/pi` without compiling Pi, Deno or V8.
 
 First install exactly one runtime package:
@@ -22,7 +22,7 @@ makepkg -si
 # Or: paru -Bi .
 ```
 
-The recipe downloads `pi-dnr-0.85.1-1-x86_64.pkg.tar.zst` and its `.sha256` from
+The recipe downloads `pi-dnr-0.86.0-1-x86_64.pkg.tar.zst` and its `.sha256` from
 the matching GitHub Release. It checks the archive name and SHA-256 before
 extracting files and regenerates pacman metadata for the `pi-dnr-bin` name.
 The checksum comes from the same HTTPS release; it is not independently signed
