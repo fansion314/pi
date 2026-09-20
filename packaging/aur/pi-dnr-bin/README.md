@@ -1,9 +1,8 @@
 # pi-dnr-bin
 
-Prebuilt Pi 0.86.0, packaging revision 2, for Linux x86_64. The recipe downloads
-`pi-dnr-0.86.0-2-x86_64.pkg.tar.zst` and its checksum from packaging release
-`pi-dnr-v0.86.0-2`. That release must be published before this binary recipe can
-be used; a branch push does not create its assets.
+Prebuilt Pi 0.86.1, packaging revision 1, for Linux x86_64. The recipe downloads
+`pi-dnr-0.86.1-1-x86_64.pkg.tar.zst` and its checksum from packaging release
+`pi-dnr-v0.86.1-1`. The release supplies both the pacman archive and a portable `pi.dnp`.
 
 It verifies the exact archive name and SHA-256 before extraction, then preserves
 the application and already prepared native sidecar under `/usr/lib/pi/`.
@@ -30,29 +29,43 @@ without installing CEF/GTK/WebKitGTK. Structural and Node-API tests run there;
 full runtime smoke tests run separately on a host with dnr installed.
 See [the source recipe](../pi-dnr/README.md) for details and validation commands.
 
-## v2 validation (2026-09-21)
+## 0.86.1 validation (2026-09-21)
+
+Synchronized upstream tag v0.86.1 (`13cbf77df`), retaining DeepSeek Responses,
+the separate completions provider, and v2 native groups. Node's new compile-cache
+launcher remains enabled for Node bundles; DNP uses an ESM launcher because dnr
+0.2.0 does not export `enableCompileCache` from `node:module`.
+
+`npm run check` passed. Targeted upstream regressions passed: 48 AI tests (4
+conditional skips) and 37 coding-agent tests. The built v2 package passed its
+structure/Node-API checks and both cold-cache and adjacent-installation smoke
+tests. A real isolated PTY accepted input, ran a faux-provider bash call, showed
+the reply and exited 0. No paid model request was made. macOS native execution
+was not performed on this Linux host. Logs: `../dnr/dist/validation-pi-0.86.1/`.
+
+## Historical v2 validation (2026-09-21)
 
 On CachyOS x86_64, with dnc/dnr 0.2.0:
 
-+- Built a single DNP with both Linux x64 glibc and macOS ARM64 variants.
-+- `npm run check` passed. Package tests verified platform declarations, content
-+  hashes, read-only payload modes, preservation of an existing destination and
-+  real Node-API loading.
-+- Full offline smoke tests passed on both CEF and WebView, in cold/warm-cache
-+  and pre-extracted-sidecar modes. Repeated runs preserved native inode/mtime;
-+  sidecar mode did not create a user cache.
-+- An isolated source snapshot ran real prepare/build/check/package hooks via
-+  makepkg, using the standalone dnc. Local dependency lookup was explicitly
-+  bypassed; this does not claim a clean-container build.
-+- Both source and binary pacman packages preserve the `/usr/lib/pi` sidecar and
-+  the relative `/usr/bin/pi` symlink. The binary recipe rejected a wrong digest
-+  and a wrong checksum filename. The extracted package passed full runtime
-+  smoke tests without regenerating its sidecar.
-+
-+macOS payloads were included and hash-checked, but were not executed on Linux.
-+No system package, user configuration or paid provider was changed. Evidence is
-+under `../dnr/dist/validation-v0.2.0/pi-*`; packaging CI runs on the next packaging
-+tag, separately from the dnr runtime release.
+- Built a single DNP with both Linux x64 glibc and macOS ARM64 variants.
+- `npm run check` passed. Package tests verified platform declarations, content
+  hashes, read-only payload modes, preservation of an existing destination and
+  real Node-API loading.
+- Full offline smoke tests passed on both CEF and WebView, in cold/warm-cache
+  and pre-extracted-sidecar modes. Repeated runs preserved native inode/mtime;
+  sidecar mode did not create a user cache.
+- An isolated source snapshot ran real prepare/build/check/package hooks via
+  makepkg, using the standalone dnc. Local dependency lookup was explicitly
+  bypassed; this does not claim a clean-container build.
+- Both source and binary pacman packages preserve the `/usr/lib/pi` sidecar and
+  the relative `/usr/bin/pi` symlink. The binary recipe rejected a wrong digest
+  and a wrong checksum filename. The extracted package passed full runtime
+  smoke tests without regenerating its sidecar.
+
+macOS payloads were included and hash-checked, but were not executed on Linux.
+No system package, user configuration or paid provider was changed. Evidence is
+under `../dnr/dist/validation-v0.2.0/pi-*`; packaging CI runs on the next packaging
+tag, separately from the dnr runtime release.
 
 ## Historical v1 validation (2026-09-18)
 

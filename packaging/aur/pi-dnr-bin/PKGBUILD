@@ -1,7 +1,7 @@
 # Maintainer: Peilin Fan <peilin.fan@foxmail.com>
 pkgname=pi-dnr-bin
-pkgver=0.86.0
-pkgrel=2
+pkgver=0.86.1
+pkgrel=1
 pkgdesc='Pi coding agent for the shared dnr runtime (prebuilt)'
 arch=('x86_64')
 url='https://github.com/fansion314/pi'
@@ -15,8 +15,8 @@ optdepends=('git: install Git-based extensions and work with repositories'
 provides=("pi-dnr=$pkgver" "pi-coding-agent=$pkgver")
 conflicts=('pi-dnr' 'pi-coding-agent')
 options=('!strip' '!debug')
-_package="pi-dnr-$pkgver-2-x86_64.pkg.tar.zst"
-_release="$url/releases/download/pi-dnr-v$pkgver-2"
+_package="pi-dnr-$pkgver-1-x86_64.pkg.tar.zst"
+_release="$url/releases/download/pi-dnr-v$pkgver-1"
 source=("$_release/$_package" "$_release/$_package.sha256")
 noextract=("$_package")
 # The release archive is produced by CI after tagging; verify its checksum below.

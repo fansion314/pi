@@ -1,7 +1,7 @@
 # Maintainer: Peilin Fan <peilin.fan@foxmail.com>
 pkgname=pi-dnr
-pkgver=0.86.0
-pkgrel=2
+pkgver=0.86.1
+pkgrel=1
 pkgdesc='Pi coding agent packaged as a single application for the shared dnr runtime'
 arch=('x86_64')
 url='https://github.com/fansion314/pi'
@@ -18,7 +18,7 @@ conflicts=('pi-coding-agent')
 # Preserve the executable shell/ZIP container byte-for-byte.
 options=('!strip' '!debug')
 # Pin the v2 packaging implementation without moving the existing upstream tag.
-_commit=0d05e8d4c15a08915783671c8955e7e5892bf91b
+_commit=ab9d56c6431850d15b67305404f92979a34f0d7e
 source=("pi::git+https://github.com/fansion314/pi.git#commit=${_commit}")
 sha256sums=('SKIP')
 
