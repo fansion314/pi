@@ -39,13 +39,13 @@ and the shared `dnr` executable runs it. It replaces the former `build:binary:de
 and `deno compile` workflow. The existing Bun release build is unchanged.
 
 Install Node.js and put the dnr project's `dist/dnc` and `dist/dnr` on `PATH`.
-The runtime must support ZIP native library extraction (added on 2026-09-18).
+Both dnc and dnr must be version 0.2.0 or newer for format-v2 native groups.
 From the Pi repository root:
 
 ```bash
 npm ci --ignore-scripts
-# Fetch catalog data after changing branches or updating the model generator.
-npm run generate:models
+npm run build:native:darwin # On macOS; use build:native:linux on Linux.
+npm run hydrate:model-data
 npm --prefix packages/coding-agent run build:dnp
 ```
 
@@ -70,11 +70,13 @@ packages/coding-agent/dist/dnr/
 ```
 
 Only `pi.dnp` is needed for deployment; the text files describe its ZIP contents.
-The ZIP includes `native/darwin/prebuilds/darwin-arm64/darwin-platform.node` on macOS,
-or `native/linux/prebuilds/linux-x64/linux-platform-x11.node` on Linux. On first load,
-dnr extracts the requested native library to a private system temporary directory and reuses
-it within the process. The host cleans it up on exit; no files are extracted beside the package.
-The runtime's temporary directory must be writable and permit dynamic library loading.
+The default ZIP contains both macOS ARM64 and Linux x64 native variants. On first
+load, dnr materializes the selected native group into its persistent verified
+cache (`~/Library/Caches/dnr/v2` on macOS). Ordinary JS and resources stay in the
+package. A prepared `.unpacked` sidecar can supply native groups instead; see
+[DNR packaging](../../../packaging/aur/pi-dnr/README.md) for the installation layout.
+On macOS, archive inspection needs a Zstandard-capable libarchive `bsdtar`
+available as `tar` on `PATH`; the system tar may not support ZIP method 93.
 Linux Wayland clipboard commands still need the corresponding system tools.
 
 Run or install the single package (requires the updated `dnr` on `PATH`):
@@ -107,8 +109,8 @@ the two DeepSeek catalogs, Photon resizing, a tool call through a local faux pro
 storage, HTML export, CLI startup, and caller cwd. It does not contact paid model APIs.
 It also compares the emitted file inventory against the ZIP central directory and runs through
 a symlink with only dnr and system commands on PATH. It verifies the embedded native helper
-loads, repeated loads reuse the module, the extracted bytes match the ZIP, the temporary directory
-is private, and dnr cleans it up after exit. The directory beside the package stays unchanged.
+loads, cold and warm caches preserve verified native files, and a prepared
+sidecar avoids user-cache writes. The directory beside the package stays unchanged.
 
 Validated on macOS ARM64 on 2026-09-18 using Pi 0.85.1 and dnc 0.1.0: the artifact smoke
 test and `npm run check` passed, including single-file deployment and native temporary-file
