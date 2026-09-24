@@ -1,6 +1,6 @@
 # pi-dnr for Arch Linux / CachyOS
 
-Pi 0.86.1, packaging revision 1, uses dnr format v2. Building needs the standalone
+Pi 0.87.1, packaging revision 1, uses dnr format v2. Building needs the standalone
 `dnc>=0.2.0` package, Git, Node.js, npm, libarchive, libxcb and base-devel. It does
 not need dnr, CEF, GTK or WebKitGTK. Running the installed application needs one
 runtime provider satisfying `dnr>=0.2.0`, plus the dependencies in `PKGBUILD`.
@@ -68,12 +68,26 @@ node scripts/build-dnp.mjs --dnc /path/to/dnc --target all --output dist/pi.dnp
 # --target linux-x64 or --target darwin-arm64 creates a single-platform package.
 ```
 
-Packaging-only releases use `pi-dnr-v0.86.1-1`, independent of the existing
-upstream `v0.86.0` tag. Do not move the old tag. The workflow publishes the pacman
+Packaging-only releases use `pi-dnr-v0.87.1-1`, independent of the existing
+upstream version tags. Existing tags remain unchanged. The workflow publishes the pacman
 package and cross-platform `pi.dnp`, with checksums. The binary recipe requires
 those release assets; pushing a branch alone does not publish them or register AUR.
 
 Regenerate metadata with `makepkg --printsrcinfo > .SRCINFO` after recipe changes.
+
+## 0.87.1 validation (2026-09-24)
+
+Synchronized upstream v0.87.1 (`f07218c4d`), preserving DeepSeek Responses,
+the separate completions provider and DNR format-v2 packaging. Fixed the
+Copilot Opus 5.5 effort override when the live catalog already contains the model.
+
+`npm run check` passed. The isolated offline suite found two failures: the
+Copilot effort metadata and the retained development page's navigation entry.
+Both were fixed; 132 targeted AI tests and the documentation test passed on rerun.
+The other offline suites passed. macOS ARM64 package/Node-API checks and both
+cache and sidecar runtime smoke tests passed. An isolated PTY accepted a prompt,
+executed a faux-provider bash call, displayed the reply and exited successfully.
+No paid model API was used. Linux packaging is validated by the release workflow.
 
 ## 0.86.1 validation (2026-09-21)
 

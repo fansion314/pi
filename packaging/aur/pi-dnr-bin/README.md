@@ -1,8 +1,8 @@
 # pi-dnr-bin
 
-Prebuilt Pi 0.86.1, packaging revision 1, for Linux x86_64. The recipe downloads
-`pi-dnr-0.86.1-1-x86_64.pkg.tar.zst` and its checksum from packaging release
-`pi-dnr-v0.86.1-1`. The release supplies both the pacman archive and a portable `pi.dnp`.
+Prebuilt Pi 0.87.1, packaging revision 1, for Linux x86_64. The recipe downloads
+`pi-dnr-0.87.1-1-x86_64.pkg.tar.zst` and its checksum from packaging release
+`pi-dnr-v0.87.1-1`. The release supplies both the pacman archive and a portable `pi.dnp`.
 
 It verifies the exact archive name and SHA-256 before extraction, then preserves
 the application and already prepared native sidecar under `/usr/lib/pi/`.
@@ -28,6 +28,20 @@ The source build container uses only standalone dnc and small build dependencies
 without installing CEF/GTK/WebKitGTK. Structural and Node-API tests run there;
 full runtime smoke tests run separately on a host with dnr installed.
 See [the source recipe](../pi-dnr/README.md) for details and validation commands.
+
+## 0.87.1 validation (2026-09-24)
+
+Synchronized upstream v0.87.1 (`f07218c4d`), preserving DeepSeek Responses,
+the separate completions provider and DNR format-v2 packaging. Fixed the
+Copilot Opus 5.5 effort override when the live catalog already contains the model.
+
+`npm run check` passed. The isolated offline suite found two failures: the
+Copilot effort metadata and the retained development page's navigation entry.
+Both were fixed; 132 targeted AI tests and the documentation test passed on rerun.
+The other offline suites passed. macOS ARM64 package/Node-API checks and both
+cache and sidecar runtime smoke tests passed. An isolated PTY accepted a prompt,
+executed a faux-provider bash call, displayed the reply and exited successfully.
+No paid model API was used. Linux packaging is validated by the release workflow.
 
 ## 0.86.1 validation (2026-09-21)
 
