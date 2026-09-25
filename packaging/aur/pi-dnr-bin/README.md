@@ -40,6 +40,17 @@ extensions, Photon resizing, local faux-provider bash calls, sessions and HTML
 export. No paid model API was used. This run did not repeat macOS or interactive
 PTY validation. The remote release workflow still verifies the published package.
 
+### V3 publication and local installation
+
+[Actions 36118415944](https://github.com/fansion314/pi/actions/runs/36118415944)
+succeeded and published [Pi DNR 0.87.1-2](https://github.com/fansion314/pi/releases/tag/pi-dnr-v0.87.1-2).
+The downloaded archive passed its SHA-256 check. Fresh extraction of the final
+`pi-dnr-bin` package passed the structure/Node-API and both cache/sidecar smoke
+tests with the released dnr 0.3.0. `paru -U` upgraded the local installation to
+`pi-dnr-bin 0.87.1-2` together with dnr; `pi --version` reports 0.87.1 and
+`pacman -Qkk pi-dnr-bin` reports 44 files with none altered. The installed DNP
+matches the released payload. Existing user settings and sessions were preserved.
+
 ## 0.87.1 validation (2026-09-24)
 
 Synchronized upstream v0.87.1 (`f07218c4d`), preserving DeepSeek Responses,
