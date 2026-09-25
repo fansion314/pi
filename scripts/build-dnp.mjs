@@ -34,7 +34,7 @@ const { values } = parseArgs({
 
 if (values.help) {
 	console.log(
-		"Usage: node scripts/build-dnp.mjs [--output path/to/pi.dnp] [--dnc path/to/dnc] [--target all|linux-x64|darwin-arm64]\nRequires installed dependencies, hydrated model data, and dnc. Runs TypeScript compilation, minified bundling, and dnc packaging. Requires dnc >= 0.2.0 and libarchive (bsdtar on Linux). The default v2 package contains Linux x64 and macOS ARM64 native groups; running requires dnr >= 0.2.0.",
+		"Usage: node scripts/build-dnp.mjs [--output path/to/pi.dnp] [--dnc path/to/dnc] [--target all|linux-x64|darwin-arm64]\nRequires installed dependencies, hydrated model data, and dnc. Runs TypeScript compilation, minified bundling, and dnc packaging. Requires dnc >= 0.3.0. The default v3 package contains Linux x64 and macOS ARM64 native groups; running requires dnr >= 0.3.0.",
 	);
 	process.exit(0);
 }
@@ -56,8 +56,8 @@ function run(command, args, options = {}) {
 const version = spawnSync(values.dnc, ["--version"], { encoding: "utf8" });
 if (version.error) throw version.error;
 const parsed = /^dnc (\d+)\.(\d+)\.(\d+)/.exec(version.stdout ?? "");
-if (version.status !== 0 || !parsed || (Number(parsed[1]) === 0 && Number(parsed[2]) < 2)) {
-	throw new Error("dnc >= 0.2.0 is required for v2 native groups.");
+if (version.status !== 0 || !parsed || (Number(parsed[1]) === 0 && Number(parsed[2]) < 3)) {
+	throw new Error("dnc >= 0.3.0 is required for v3 packages.");
 }
 // Use the upstream TS compiler to rewrite .ts imports and emit real JavaScript.
 // The offline AI build validates generated catalogs instead of fetching at build time.
@@ -198,7 +198,7 @@ try {
 		"--package-config",
 		configPath,
 	]);
-	readDnp(stagedOutput);
+	readDnp(stagedOutput, values.dnc);
 	// Copy to the destination filesystem before atomic replacement.
 	const pendingOutput = `${output}.tmp-${process.pid}`;
 	try {
@@ -207,7 +207,7 @@ try {
 	} finally {
 		rmSync(pendingOutput, { force: true });
 	}
-	const entries = archiveEntries(output)
+	const entries = archiveEntries(output, undefined, values.dnc)
 		.toString("utf8")
 		.trim()
 		.split("\n")

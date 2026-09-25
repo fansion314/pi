@@ -8,7 +8,7 @@ import { archiveEntries, digest, nativeTargets, prepareDnpInstall, readDnp } fro
 
 const source = process.env.PI_DNP_TEST_PACKAGE;
 test(
-	"v2 Pi index covers both platform addons and prepares a relocatable, read-only sidecar",
+	"v3 Pi index covers both platform addons and prepares a relocatable, read-only sidecar",
 	{
 		skip: !source && "Set PI_DNP_TEST_PACKAGE to the built pi.dnp",
 	},
@@ -27,6 +27,7 @@ test(
 			assert.equal(addon.native, "addon");
 			assert.equal(addon.napi, 8);
 			assert.ok(manifest.groups.includes(addon.group));
+			assert.match(addon.source, /^\.dnr\/p\/[0-9]+-[^/]+$/);
 			assert.equal(digest(archiveEntries(source, addon.source)), addon.sha256);
 		}
 		const temp = mkdtempSync(join(tmpdir(), "pi-dnp-install-test-"));
@@ -35,7 +36,7 @@ test(
 			const addon = records.find((r) => r.path === target.path);
 			const installed = prepareDnpInstall(source, join(temp, "install"));
 			assert.deepEqual(readFileSync(installed), readFileSync(source));
-			const generation = join(`${installed}.unpacked`, "v2", packageId.slice(0, 2), packageId, target.id);
+			const generation = join(`${installed}.unpacked`, "v3", packageId, target.id);
 			const native = join(generation, addon.group, "root", addon.path);
 			assert.equal(digest(readFileSync(native)), addon.sha256);
 			assert.equal(statSync(native).mode & 0o777, addon.mode & ~0o222);
