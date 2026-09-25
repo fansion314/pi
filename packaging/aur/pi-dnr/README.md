@@ -1,9 +1,9 @@
 # pi-dnr for Arch Linux / CachyOS
 
-Pi 0.87.1, packaging revision 1, uses dnr format v2. Building needs the standalone
-`dnc>=0.2.0` package, Git, Node.js, npm, libarchive, libxcb and base-devel. It does
+Pi 0.87.1, packaging revision 2, uses dnr format v3. Building needs the standalone
+`dnc>=0.3.0` package, Git, Node.js, npm, libarchive, libxcb and base-devel. It does
 not need dnr, CEF, GTK or WebKitGTK. Running the installed application needs one
-runtime provider satisfying `dnr>=0.2.0`, plus the dependencies in `PKGBUILD`.
+runtime provider satisfying `dnr>=0.3.0`, plus the dependencies in `PKGBUILD`.
 
 Normal `makepkg -si` also installs runtime dependencies on the local machine.
 For a build-only environment, install **all** `makedepends`, verify them with
@@ -26,7 +26,7 @@ It does not compile or embed Deno/V8. The native variants are explicitly declare
 as Node-API groups. The included DOOM example build script and its companion
 resources have a separate group; its WASM and license notices are data assets.
 
-`scripts/prepare-dnp-install.mjs` reads the v2 manifest and index with libarchive,
+`scripts/prepare-dnp-install.mjs` uses dnc v3 metadata inspection and installation,
 checks SHA-256, and stages the current platform's reviewed groups beside the DNP
 **before** makepkg creates the package. It does not execute dnr or native code.
 It implements Pi's limited, reviewed group layout; adding other native groups
@@ -37,7 +37,7 @@ Pacman owns this layout:
 ```text
 /usr/bin/pi -> ../lib/pi/pi.dnp
 /usr/lib/pi/pi.dnp
-/usr/lib/pi/pi.dnp.unpacked/v2/<prefix>/<identity>/linux_x64_glibc/<group>/...
+/usr/lib/pi/pi.dnp.unpacked/v3/<packageId>/linux_x64_glibc/<group>/...
 ```
 
 The sidecar includes read-only payloads, receipts and readable lock files. Runtime
@@ -68,12 +68,23 @@ node scripts/build-dnp.mjs --dnc /path/to/dnc --target all --output dist/pi.dnp
 # --target linux-x64 or --target darwin-arm64 creates a single-platform package.
 ```
 
-Packaging-only releases use `pi-dnr-v0.87.1-1`, independent of the existing
+Packaging-only releases use `pi-dnr-v0.87.1-2`, independent of the existing
 upstream version tags. Existing tags remain unchanged. The workflow publishes the pacman
 package and cross-platform `pi.dnp`, with checksums. The binary recipe requires
 those release assets; pushing a branch alone does not publish them or register AUR.
 
 Regenerate metadata with `makepkg --printsrcinfo > .SRCINFO` after recipe changes.
+
+## V3 release validation (2026-09-25)
+
+Packaging revision 2 requires dnc/dnr 0.3.0. The release workflow downloads the
+standalone dnc 0.3.0 asset and uses the unchanged Pi 0.87.1 application version.
+`npm run check` passed after hydrating the model data. The v3 DNP contains both
+Linux x64 and macOS ARM64 payloads. Linux package/Node-API checks and cache/sidecar
+smoke tests passed with the dual-backend dnr 0.3.0, covering CLI, TypeScript
+extensions, Photon resizing, local faux-provider bash calls, sessions and HTML
+export. No paid model API was used. This run did not repeat macOS or interactive
+PTY validation. The remote release workflow still verifies the published package.
 
 ## 0.87.1 validation (2026-09-24)
 

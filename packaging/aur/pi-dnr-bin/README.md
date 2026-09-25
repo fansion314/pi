@@ -1,8 +1,8 @@
 # pi-dnr-bin
 
-Prebuilt Pi 0.87.1, packaging revision 1, for Linux x86_64. The recipe downloads
-`pi-dnr-0.87.1-1-x86_64.pkg.tar.zst` and its checksum from packaging release
-`pi-dnr-v0.87.1-1`. The release supplies both the pacman archive and a portable `pi.dnp`.
+Prebuilt Pi 0.87.1, packaging revision 2, for Linux x86_64. The recipe downloads
+`pi-dnr-0.87.1-2-x86_64.pkg.tar.zst` and its checksum from packaging release
+`pi-dnr-v0.87.1-2`. The release supplies both the pacman archive and a portable `pi.dnp`.
 
 It verifies the exact archive name and SHA-256 before extraction, then preserves
 the application and already prepared native sidecar under `/usr/lib/pi/`.
@@ -10,8 +10,8 @@ the application and already prepared native sidecar under `/usr/lib/pi/`.
 unpack native libraries into the executable search path. Only the Linux native
 variant is prepared; the DNP itself also contains the macOS ARM64 variant.
 
-Choose any runtime provider satisfying `dnr>=0.2.0`: `dnr`, `dnr-webview`,
-`dnr-bin` or `dnr-webview-bin`. Runtime packages no longer include dnc; neither
+Choose any runtime provider satisfying `dnr>=0.3.0`: `dnr`, `dnr-cef`, `dnr-webview`,
+`dnr-bin`, `dnr-cef-bin` or `dnr-webview-bin`. Runtime packages no longer include dnc; neither
 dnc nor Node.js is required for ordinary use of this prebuilt package.
 
 ```sh
@@ -28,6 +28,17 @@ The source build container uses only standalone dnc and small build dependencies
 without installing CEF/GTK/WebKitGTK. Structural and Node-API tests run there;
 full runtime smoke tests run separately on a host with dnr installed.
 See [the source recipe](../pi-dnr/README.md) for details and validation commands.
+
+## V3 release validation (2026-09-25)
+
+Packaging revision 2 requires dnc/dnr 0.3.0. The release workflow downloads the
+standalone dnc 0.3.0 asset and uses the unchanged Pi 0.87.1 application version.
+`npm run check` passed after hydrating the model data. The v3 DNP contains both
+Linux x64 and macOS ARM64 payloads. Linux package/Node-API checks and cache/sidecar
+smoke tests passed with the dual-backend dnr 0.3.0, covering CLI, TypeScript
+extensions, Photon resizing, local faux-provider bash calls, sessions and HTML
+export. No paid model API was used. This run did not repeat macOS or interactive
+PTY validation. The remote release workflow still verifies the published package.
 
 ## 0.87.1 validation (2026-09-24)
 

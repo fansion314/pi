@@ -35,7 +35,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
           RELEASE_COMMIT: ${{ github.sha }}
-          DNC_VERSION: '0.2.0'
+          DNC_VERSION: '0.3.0'
         run: |
           mkdir -p "$RUNNER_TEMP/pi-dnr-cache" .artifacts/dnr-release
           docker pull ghcr.io/archlinux/archlinux:base-devel

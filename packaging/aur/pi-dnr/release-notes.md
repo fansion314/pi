@@ -1,4 +1,4 @@
-# Pi DNR 0.87.1-1
+# Pi DNR 0.87.1-2
 
 Updated to [upstream Pi v0.87.1](https://github.com/earendil-works/pi/releases/tag/v0.87.1),
 including Claude Opus 5.5, GPT-6 Sol/Luna and Grok 4.7 support, canonical session
@@ -13,25 +13,29 @@ extension boundary events should review the upstream coding-agent and agent chan
 
 ## Downloads
 
-- `pi.dnp`: one format-v2 application with Linux x64 glibc and macOS ARM64 native
-  groups. Requires dnr 0.2.0 or newer; no runtime is embedded.
-- `pi-dnr-0.87.1-1-x86_64.pkg.tar.zst`: Arch/CachyOS package with the DNP and
+- `pi.dnp`: one format-v3 application with Linux x64 glibc and macOS ARM64 native
+  groups. Requires dnr 0.3.0 or newer; no runtime is embedded.
+- `pi-dnr-0.87.1-2-x86_64.pkg.tar.zst`: Arch/CachyOS package with the DNP and
   verified Linux native groups under `/usr/lib/pi`; `/usr/bin/pi` is a relative
   symlink. Pacman owns the pre-extracted sidecar.
 - SHA-256 checksums and build-environment records accompany the artifacts.
 
-Install a runtime provider satisfying `dnr>=0.2.0`, then use
-`paru -U pi-dnr-0.87.1-1-x86_64.pkg.tar.zst`, or the `pi-dnr-bin` recipe for the
+Install a runtime provider satisfying `dnr>=0.3.0`, then use
+`paru -U pi-dnr-0.87.1-2-x86_64.pkg.tar.zst`, or the `pi-dnr-bin` recipe for the
 same verified payload under that package name.
 
 ## Build and compatibility
 
-The official Arch build uses standalone dnc without installing CEF, GTK or
+This packaging revision migrates Pi to DNP v3 and requires dnr 0.3.0 or newer.
+It includes native-group installation and runtime code/transpilation caches.
+The existing 0.87.1-1 v2 release remains unchanged.
+
+The official Arch build uses standalone dnc 0.3.0 without installing CEF, GTK or
 WebKitGTK. It validates both platform payloads, hashes, read-only sidecars and
 Node-API loading. End users need a compatible shared runtime.
 
 Upstream's persistent Node compile cache remains enabled for Node bundles.
-DNP uses an ESM launcher because dnr 0.2.0 does not implement Node's compile-cache
+DNP uses an ESM launcher because dnr 0.3.0 does not implement Node's compile-cache
 API. Cold-cache and adjacent-installation smoke tests cover native helpers,
 TypeScript extensions, Photon resizing, faux-provider bash calls, sessions and
 HTML export. A real macOS ARM64 PTY test checked interactive input, tool execution
@@ -44,5 +48,13 @@ macOS ARM64 native loading and both cache and sidecar runtime smoke tests passed
 The release workflow validates the Arch package and Linux Node-API loading;
 this does not constitute a Linux DNR interactive test.
 
-This fork publishes the DNR distribution as `pi-dnr-v0.87.1-1`; it does not
+This fork publishes the DNR distribution as `pi-dnr-v0.87.1-2`; it does not
 publish upstream npm packages or move an existing version tag.
+
+## V3 local validation
+
+On Linux x86_64, the rebuilt v3 package passed structure and real Node-API checks,
+plus cold/warm cache and adjacent-installation smoke tests with dnr 0.3.0.
+`npm run check` passed after model-data hydration. These tests exercised the
+local faux provider only. macOS and PTY observations above belong to earlier
+validation; they were not repeated for this packaging revision.

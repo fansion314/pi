@@ -1,13 +1,13 @@
 # Maintainer: Peilin Fan <peilin.fan@foxmail.com>
 pkgname=pi-dnr-bin
 pkgver=0.87.1
-pkgrel=1
+pkgrel=2
 pkgdesc='Pi coding agent for the shared dnr runtime (prebuilt)'
 arch=('x86_64')
 url='https://github.com/fansion314/pi'
 license=('MIT')
-# dnr, dnr-webview, dnr-bin and dnr-webview-bin all satisfy this dependency.
-depends=('dnr>=0.2.0' 'bash' 'glibc' 'libxcb' 'ripgrep' 'fd')
+# Dual, CEF-only and WebView-only runtime packages satisfy this dependency.
+depends=('dnr>=0.3.0' 'bash' 'glibc' 'libxcb' 'ripgrep' 'fd')
 optdepends=('git: install Git-based extensions and work with repositories'
             'npm: install dependencies for npm and Git extensions'
             'wl-clipboard: Wayland clipboard support'
@@ -15,8 +15,8 @@ optdepends=('git: install Git-based extensions and work with repositories'
 provides=("pi-dnr=$pkgver" "pi-coding-agent=$pkgver")
 conflicts=('pi-dnr' 'pi-coding-agent')
 options=('!strip' '!debug')
-_package="pi-dnr-$pkgver-1-x86_64.pkg.tar.zst"
-_release="$url/releases/download/pi-dnr-v$pkgver-1"
+_package="pi-dnr-$pkgver-$pkgrel-x86_64.pkg.tar.zst"
+_release="$url/releases/download/pi-dnr-v$pkgver-$pkgrel"
 source=("$_release/$_package" "$_release/$_package.sha256")
 noextract=("$_package")
 # The release archive is produced by CI after tagging; verify its checksum below.
