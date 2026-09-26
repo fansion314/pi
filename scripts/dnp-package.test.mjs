@@ -8,13 +8,14 @@ import { archiveEntries, digest, nativeTargets, prepareDnpInstall, readDnp } fro
 
 const source = process.env.PI_DNP_TEST_PACKAGE;
 test(
-	"v3 Pi index covers both platform addons and prepares a relocatable, read-only sidecar",
+	"v4 Pi index covers both platform addons and prepares a relocatable, read-only sidecar",
 	{
 		skip: !source && "Set PI_DNP_TEST_PACKAGE to the built pi.dnp",
 	},
 	() => {
 		const { manifest, records, packageId } = readDnp(source);
 		assert.equal(manifest.entry, "cli.js");
+		assert.equal(manifest.desktop, undefined, "Pi CLI does not require desktop metadata or icons");
 		assert.deepEqual(
 			Object.keys(manifest.targets).sort(),
 			Object.values(nativeTargets)
@@ -36,7 +37,7 @@ test(
 			const addon = records.find((r) => r.path === target.path);
 			const installed = prepareDnpInstall(source, join(temp, "install"));
 			assert.deepEqual(readFileSync(installed), readFileSync(source));
-			const generation = join(`${installed}.unpacked`, "v3", packageId, target.id);
+			const generation = join(`${installed}.unpacked`, "v4", packageId, target.id);
 			const native = join(generation, addon.group, "root", addon.path);
 			assert.equal(digest(readFileSync(native)), addon.sha256);
 			assert.equal(statSync(native).mode & 0o777, addon.mode & ~0o222);

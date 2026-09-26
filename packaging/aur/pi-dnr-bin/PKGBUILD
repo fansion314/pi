@@ -1,13 +1,13 @@
 # Maintainer: Peilin Fan <peilin.fan@foxmail.com>
 pkgname=pi-dnr-bin
 pkgver=0.87.1
-pkgrel=2
+pkgrel=3
 pkgdesc='Pi coding agent for the shared dnr runtime (prebuilt)'
 arch=('x86_64')
 url='https://github.com/fansion314/pi'
 license=('MIT')
 # Dual, CEF-only and WebView-only runtime packages satisfy this dependency.
-depends=('dnr>=0.3.0' 'bash' 'glibc' 'libxcb' 'ripgrep' 'fd')
+depends=('dnr>=0.4.0' 'bash' 'glibc' 'libxcb' 'ripgrep' 'fd')
 optdepends=('git: install Git-based extensions and work with repositories'
             'npm: install dependencies for npm and Git extensions'
             'wl-clipboard: Wayland clipboard support'

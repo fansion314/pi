@@ -34,7 +34,7 @@ export function readDnp(file, dnc = process.env.DNC_BIN ?? "dnc") {
 	if (result.error) throw result.error;
 	assert.equal(result.status, 0, `dnc inspect failed: ${result.stderr}`);
 	const inspected = JSON.parse(result.stdout);
-	assert.equal(inspected.manifest.formatVersion, 3, "dnc >= 0.3.0 with format v3 is required");
+	assert.equal(inspected.manifest.formatVersion, 4, "dnc >= 0.4.0 with format v4 is required");
 	assert.equal(inspected.manifest.appId, "org.pi.coding-agent");
 	assert.match(inspected.contentHash, /^[a-f0-9]{64}$/);
 	return { ...inspected, packageId: inspected.contentHash };

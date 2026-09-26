@@ -25,7 +25,7 @@ const packagePath = process.env.PI_DNP_TEST_PACKAGE;
 
 for (const mode of ["cache", "sidecar"]) {
 	test(
-		`v3 dnp runs outside the checkout with ${mode} native groups`,
+		`v4 dnp runs outside the checkout with ${mode} native groups`,
 		{
 			skip: !packagePath && "Set PI_DNP_TEST_PACKAGE to the built pi.dnp",
 			timeout: 60000,
@@ -62,10 +62,10 @@ for (const mode of ["cache", "sidecar"]) {
 				assert.ok(nativeRecord);
 				const nativeCache = join(temp, "native-cache");
 				const generation = mode === "sidecar"
-					? join(`${archive}.unpacked`, "v3", packageId, target.id)
-					: join(nativeCache, "v3", digest(Buffer.from(realpathSync(archive))), "generations", packageId, "native", target.id);
+					? join(`${archive}.unpacked`, "v4", packageId, target.id)
+					: join(nativeCache, "v4", digest(Buffer.from(realpathSync(archive))), "generations", packageId, "native", target.id);
 				const materialized = join(generation, nativeRecord.group, "root", nativeRecord.path);
-				assert.equal(manifest.formatVersion, 3);
+				assert.equal(manifest.formatVersion, 4);
 				const launcher = join(bin, "pi");
 				symlinkSync(archive, launcher);
 				const zip = readFileSync(archive);
@@ -164,7 +164,7 @@ for (const mode of ["cache", "sidecar"]) {
 					assert.deepEqual(
 						readdirSync(runtimeTmp).filter((name) => name.startsWith("dnr-native-")),
 						[],
-						"v3 must not use v1 temporary native directories",
+						"v4 must not use v1 temporary native directories",
 					);
 					return result.stdout;
 				}
@@ -199,7 +199,7 @@ for (const mode of ["cache", "sidecar"]) {
 				assert.equal(after.ino, before.ino);
 				assert.equal(after.mtimeMs, before.mtimeMs);
 				if (mode === "sidecar") {
-					assert.equal(existsSync(join(nativeCache, "v3", digest(Buffer.from(realpathSync(archive))), "generations", packageId, "native")), false, "sidecar must avoid duplicate native extraction");
+					assert.equal(existsSync(join(nativeCache, "v4", digest(Buffer.from(realpathSync(archive))), "generations", packageId, "native")), false, "sidecar must avoid duplicate native extraction");
 				}
 				assert.match(output, /DNP_SMOKE_OK/);
 				assert.ok(existsSync(join(cwd, "extension-ok")), `extension assertions must have completed: ${output}`);
@@ -209,7 +209,7 @@ for (const mode of ["cache", "sidecar"]) {
 				assert.match(readFileSync(html, "utf8"), /<!DOCTYPE html>/i);
 				assert.deepEqual(readdirSync(app).sort(), deployed, "runtime must not create new adjacent files");
 				console.log(
-					"Verified single-file deployment, v3 native groups and persistent reuse, CLI, TypeScript extension, dual DeepSeek catalogs, Photon resize, bash tool, session storage, HTML export, and caller cwd.",
+					"Verified single-file deployment, v4 native groups and persistent reuse, CLI, TypeScript extension, dual DeepSeek catalogs, Photon resize, bash tool, session storage, HTML export, and caller cwd.",
 				);
 			} finally {
 				rmSync(temp, { recursive: true, force: true });

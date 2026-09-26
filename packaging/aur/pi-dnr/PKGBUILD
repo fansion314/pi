@@ -1,14 +1,14 @@
 # Maintainer: Peilin Fan <peilin.fan@foxmail.com>
 pkgname=pi-dnr
 pkgver=0.87.1
-pkgrel=2
+pkgrel=3
 pkgdesc='Pi coding agent packaged as a single application for the shared dnr runtime'
 arch=('x86_64')
 url='https://github.com/fansion314/pi'
 license=('MIT')
 # The runtime is only needed by installed applications, not by the builder.
-depends=('dnr>=0.3.0' 'bash' 'glibc' 'libxcb' 'ripgrep' 'fd')
-makedepends=('git' 'nodejs>=22.19.0' 'npm' 'dnc>=0.3.0' 'libxcb' 'libarchive')
+depends=('dnr>=0.4.0' 'bash' 'glibc' 'libxcb' 'ripgrep' 'fd')
+makedepends=('git' 'nodejs>=22.19.0' 'npm' 'dnc>=0.4.0' 'libxcb' 'libarchive')
 optdepends=('git: install Git-based extensions and work with repositories'
             'npm: install dependencies for npm and Git extensions'
             'wl-clipboard: Wayland clipboard support'

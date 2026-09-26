@@ -1,8 +1,8 @@
 # pi-dnr-bin
 
-Prebuilt Pi 0.87.1, packaging revision 2, for Linux x86_64. The recipe downloads
-`pi-dnr-0.87.1-2-x86_64.pkg.tar.zst` and its checksum from packaging release
-`pi-dnr-v0.87.1-2`. The release supplies both the pacman archive and a portable `pi.dnp`.
+Prebuilt Pi 0.87.1, packaging revision 3, for Linux x86_64. The recipe downloads
+`pi-dnr-0.87.1-3-x86_64.pkg.tar.zst` and its checksum from packaging release
+`pi-dnr-v0.87.1-3`. The release supplies both the pacman archive and a portable `pi.dnp`.
 
 It verifies the exact archive name and SHA-256 before extraction, then preserves
 the application and already prepared native sidecar under `/usr/lib/pi/`.
@@ -10,7 +10,7 @@ the application and already prepared native sidecar under `/usr/lib/pi/`.
 unpack native libraries into the executable search path. Only the Linux native
 variant is prepared; the DNP itself also contains the macOS ARM64 variant.
 
-Choose any runtime provider satisfying `dnr>=0.3.0`: `dnr`, `dnr-cef`, `dnr-webview`,
+Choose any runtime provider satisfying `dnr>=0.4.0`: `dnr`, `dnr-cef`, `dnr-webview`,
 `dnr-bin`, `dnr-cef-bin` or `dnr-webview-bin`. Runtime packages no longer include dnc; neither
 dnc nor Node.js is required for ordinary use of this prebuilt package.
 
@@ -28,6 +28,16 @@ The source build container uses only standalone dnc and small build dependencies
 without installing CEF/GTK/WebKitGTK. Structural and Node-API tests run there;
 full runtime smoke tests run separately on a host with dnr installed.
 See [the source recipe](../pi-dnr/README.md) for details and validation commands.
+
+## V4 validation (2026-09-26)
+
+Packaging revision 3 uses dnc/dnr 0.4.0 and the v4 cache/sidecar layout.
+Pi remains a CLI package with no desktop metadata or icon. `npm run check`
+passed without dependency or lockfile changes. The local DNP contains both
+platform helpers; its structure/real Node-API test and both cache/sidecar smoke
+tests passed from isolated directories using the faux provider. No paid model
+API was used. macOS and interactive PTY were not revalidated in this revision.
+The DNR release workflow is pinned to standalone dnc 0.4.0.
 
 ## V3 release validation (2026-09-25)
 
