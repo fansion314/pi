@@ -39,6 +39,18 @@ tests passed from isolated directories using the faux provider. No paid model
 API was used. macOS and interactive PTY were not revalidated in this revision.
 The DNR release workflow is pinned to standalone dnc 0.4.0.
 
+### V4 publication and local installation
+
+[Actions 36214598692](https://github.com/fansion314/pi/actions/runs/36214598692)
+succeeded and published [Pi DNR 0.87.1-3](https://github.com/fansion314/pi/releases/tag/pi-dnr-v0.87.1-3).
+The downloaded package and standalone DNP passed their release SHA-256 checks.
+Fresh extraction of the final pi-dnr-bin archive passed all three structure,
+Node-API, cache and sidecar smoke tests with the official dnr 0.4.0 binary.
+The local installation is now pi-dnr-bin 0.87.1-3; `pacman -Qkk` reports 44 files,
+none altered, and `/usr/bin/pi --version` reports 0.87.1. The same three isolated
+offline tests passed after installation. User settings and sessions were preserved.
+No paid model API or new macOS validation was involved.
+
 ## V3 release validation (2026-09-25)
 
 Packaging revision 2 requires dnc/dnr 0.3.0. The release workflow downloads the
