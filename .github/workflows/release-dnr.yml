@@ -64,6 +64,9 @@ jobs:
           if-no-files-found: ignore
 
   release:
+    concurrency:
+      group: publish-dnr-${{ github.ref_name }}
+      cancel-in-progress: false
     name: Publish Pi DNR release
     needs: build
     runs-on: ubuntu-24.04
