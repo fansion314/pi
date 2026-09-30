@@ -2,7 +2,13 @@
 // Do not edit manually - run 'npm run generate-models' to update
 
 import values from "./data/deepseek-completions.json" with { type: "json" };
-import { flattenModelCatalog, type ModelCatalog } from "../model-catalog.ts";
+import { flattenChatModelCatalog, flattenClassifierModelCatalog, flattenImageModelCatalog, type ChatModelCatalog, type ClassifierModelCatalog, type ImageModelCatalog } from "../model-catalog.ts";
 
-export const DEEPSEEK_COMPLETIONS_MODELS: ModelCatalog<typeof values, "deepseek-completions"> =
-	flattenModelCatalog("deepseek-completions", values);
+export const DEEPSEEK_COMPLETIONS_MODELS: ChatModelCatalog<typeof values, "deepseek-completions"> =
+	flattenChatModelCatalog("deepseek-completions", values);
+
+export const DEEPSEEK_COMPLETIONS_IMAGE_MODELS: ImageModelCatalog<typeof values, "deepseek-completions"> =
+	flattenImageModelCatalog("deepseek-completions", values);
+
+export const DEEPSEEK_COMPLETIONS_CLASSIFIER_MODELS: ClassifierModelCatalog<typeof values, "deepseek-completions"> =
+	flattenClassifierModelCatalog("deepseek-completions", values);

@@ -11,6 +11,7 @@ export default function (pi: ExtensionAPI) {
 	const faux = fauxProvider({ provider: "dnp-smoke", models: [{ id: "local" }] });
 	faux.setResponses([
 		fauxAssistantMessage(fauxToolCall("bash", { command: "printf dnp-tool-ok" }), { stopReason: "toolUse" }),
+		fauxAssistantMessage(fauxToolCall("codemode", { code: 'text("DNP_CODEMODE_OK");' }), { stopReason: "toolUse" }),
 		fauxAssistantMessage("DNP_SMOKE_OK"),
 	]);
 	pi.registerProvider(faux.provider);

@@ -1,21 +1,20 @@
-# Pi DNR 0.87.1-3
+# Pi DNR 0.99.1-1
 
-This packaging revision moves the existing Pi 0.87.1 application to DNP v4.
-Use dnr 0.4.0 or newer, and upgrade the runtime and application package together.
-The previous v3 release remains available under its original tag.
+Synchronizes the DNR fork with upstream Pi v0.99.1. Use dnr 0.4.0 or newer.
 
-- CLI packages omit optional desktop metadata and icons.
-- Linux x64 glibc and macOS ARM64 native helpers remain in declared groups.
-- The Arch package installs verified Linux groups in the v4 sidecar under
-  `/usr/lib/pi`; `/usr/bin/pi` remains a relative symlink. User data is preserved.
-- Build and installation inspection use standalone dnc 0.4.0. No GUI runtime
-  is required on the build host.
+- Adds upstream Codemode and MCP, terminal system themes, virtual models, and
+  classifier models from v0.99.0.
+- Adds GPT-6.1 Sol and makes it the default OpenAI Codex model.
+- Includes the upstream bundled OpenAI sign-in fix and all lazy OAuth modules.
+- Preserves DeepSeek Responses (`deepseek`) and Chat Completions
+  (`deepseek-completions`) using `DEEPSEEK_API_KEY`.
+- Builds the Codemode and MCP workspaces and packages the Codemode worker and
+  QuickJS WASM resource.
+- Retains DNP v4 with Linux x64 and macOS ARM64 native helpers.
 
-Assets: `pi.dnp`, `pi-dnr-0.87.1-3-x86_64.pkg.tar.zst`, checksums, and build records.
-The `pi-dnr-bin` recipe repackages the same verified payload.
+GitHub Actions builds the Arch package, cross-platform `pi.dnp`, and macOS ARM64
+Homebrew archive. The Arch package installs verified Linux groups under
+`/usr/lib/pi`; `/usr/bin/pi` is a relative symlink. Runtime installation remains
+separate. Checksums and build records accompany the release assets.
 
-The DNR-only tag is `pi-dnr-v0.87.1-3`. Application and npm versions are unchanged;
-the retained DeepSeek providers and upstream Pi features are unchanged.
-Linux validation covers structure, real Node-API, cache/sidecar deployment,
-TypeScript extensions, Photon WASM, faux-provider bash calls, sessions and HTML
-export. macOS execution is not newly validated in this revision.
+The DNR-only tag is `pi-dnr-v0.99.1-1`; upstream tags and npm releases are unchanged.

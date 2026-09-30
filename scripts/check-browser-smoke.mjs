@@ -3,6 +3,12 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { build } from "esbuild";
 
+// Source-only synchronization may defer bundle checks to the mandatory CI build.
+if (process.env.PI_SKIP_BUILD_CHECKS === "1" && process.env.CI !== "true") {
+	console.log("Browser bundle checks deferred to CI (PI_SKIP_BUILD_CHECKS=1).");
+	process.exit(0);
+}
+
 const outputPath = join(tmpdir(), "pi-browser-smoke.js");
 const durableOutputPath = join(tmpdir(), "pi-durable-browser-smoke.js");
 const agentTreeshakeOutputPath = join(tmpdir(), "pi-agent-treeshake-smoke.js");
@@ -65,6 +71,9 @@ try {
 	const durableInputs = durableBuild.metafile.inputs;
 	for (const expectedInput of [
 		"packages/durable/src/index.ts",
+		"packages/durable/src/env/index.ts",
+		"packages/durable/src/storage/jsonl/index.ts",
+		"packages/durable/src/storage/jsonl/storage.ts",
 		"packages/durable/src/storage/memory.ts",
 		"packages/durable/src/storage/sqlite/index.ts",
 		"packages/durable/src/storage/sqlite/storage.ts",
@@ -73,8 +82,14 @@ try {
 			throw new Error(`Durable browser bundle does not include ${expectedInput}`);
 		}
 	}
-	const nodeAdapter = findInput(durableInputs, "packages/durable/src/storage/sqlite/node.ts");
-	if (nodeAdapter) throw new Error(`Durable browser bundle unexpectedly includes ${nodeAdapter}`);
+	for (const forbiddenInput of [
+		"packages/durable/src/env/node.ts",
+		"packages/durable/src/storage/jsonl/node.ts",
+		"packages/durable/src/storage/sqlite/node.ts",
+	]) {
+		const nodeAdapter = findInput(durableInputs, forbiddenInput);
+		if (nodeAdapter) throw new Error(`Durable browser bundle unexpectedly includes ${nodeAdapter}`);
+	}
 
 	const agentTreeshakeBuild = await build({
 		entryPoints: ["scripts/agent-treeshake-smoke-entry.ts"],

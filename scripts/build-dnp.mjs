@@ -61,7 +61,7 @@ if (version.status !== 0 || !parsed || (Number(parsed[1]) === 0 && Number(parsed
 }
 // Use the upstream TS compiler to rewrite .ts imports and emit real JavaScript.
 // The offline AI build validates generated catalogs instead of fetching at build time.
-for (const name of ["chord", "tui", "telemetry", "ai", "agent", "coding-agent"]) {
+for (const name of ["chord", "tui", "telemetry", "ai", "agent", "codemode", "mcp", "coding-agent"]) {
 	run("npm", [
 		"--prefix",
 		join(repoRoot, "packages", name),
@@ -142,6 +142,7 @@ try {
 	// jiti remains a runtime compiler for user-supplied extensions, not Pi itself.
 	for (const [name, files] of [
 		["jiti", ["package.json", "lib/jiti.cjs", "dist/jiti.cjs", "dist/babel.cjs", "LICENSE"]],
+		["quickjs-wasi", ["package.json", "quickjs.wasm", "LICENSE"]],
 		[
 			"@silvia-odwyer/photon-node",
 			["package.json", "photon_rs.js", "photon_rs_bg.js", "photon_rs_bg.wasm", "LICENSE.md"],

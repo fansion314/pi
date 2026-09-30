@@ -98,6 +98,9 @@ for (const mode of ["cache", "sidecar"]) {
 				);
 				assert.ok(entries.includes(".dnr/meta.bin"));
 				assert.ok(entries.includes("chunks/image-resize-worker.js"));
+				assert.ok(entries.includes("chunks/codemode-worker.js"));
+				assert.ok(entries.includes("chunks/openai-chatgpt.js"));
+				assert.ok(entries.includes("node_modules/quickjs-wasi/quickjs.wasm"));
 				assert.deepEqual(
 					entries.filter((entry) => /\.(node|dylib|so)$/.test(entry)).sort(),
 					records
@@ -179,6 +182,10 @@ for (const mode of ["cache", "sidecar"]) {
 					"--no-prompt-templates",
 					"--no-themes",
 					"-e",
+					"builtin:bash",
+					"-e",
+					"builtin:codemode",
+					"-e",
 					extension,
 					"--provider",
 					"dnp-smoke",
@@ -187,7 +194,7 @@ for (const mode of ["cache", "sidecar"]) {
 					"--session",
 					session,
 					"--tools",
-					"bash",
+					"bash,codemode",
 					"-p",
 					"Run the smoke test",
 				];
@@ -204,6 +211,16 @@ for (const mode of ["cache", "sidecar"]) {
 				assert.match(output, /DNP_SMOKE_OK/);
 				assert.ok(existsSync(join(cwd, "extension-ok")), `extension assertions must have completed: ${output}`);
 				assert.match(readFileSync(session, "utf8"), /dnp-tool-ok/);
+				const codemodeResults = readFileSync(session, "utf8")
+					.trim()
+					.split("\n")
+					.map((line) => JSON.parse(line).message)
+					.filter((message) => message?.role === "toolResult" && message.toolName === "codemode");
+				assert.ok(codemodeResults.length > 0, "Codemode must return a real tool result");
+				for (const result of codemodeResults) {
+					assert.equal(result.isError, false, JSON.stringify(result));
+					assert.ok(result.content.some((item) => item.type === "text" && item.text.includes("DNP_CODEMODE_OK")));
+				}
 				const html = join(cwd, "session.html");
 				run(["--export", session, html]);
 				assert.match(readFileSync(html, "utf8"), /<!DOCTYPE html>/i);
