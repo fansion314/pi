@@ -37,7 +37,10 @@ test(
 			const addon = records.find((r) => r.path === target.path);
 			const installed = prepareDnpInstall(source, join(temp, "install"));
 			assert.deepEqual(readFileSync(installed), readFileSync(source));
-			const generation = join(`${installed}.unpacked`, "v4", packageId, target.id);
+			const sidecar = `${installed}.unpacked`;
+			const generation = existsSync(join(sidecar, addon.group))
+				? sidecar
+				: join(sidecar, "v4", packageId, target.id);
 			const native = join(generation, addon.group, "root", addon.path);
 			assert.equal(digest(readFileSync(native)), addon.sha256);
 			assert.equal(statSync(native).mode & 0o777, addon.mode & ~0o222);

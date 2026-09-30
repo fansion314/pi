@@ -61,8 +61,9 @@ for (const mode of ["cache", "sidecar"]) {
 				const nativeRecord = records.find((record) => record.target === target.id && record.native === "addon");
 				assert.ok(nativeRecord);
 				const nativeCache = join(temp, "native-cache");
+				const sidecar = `${archive}.unpacked`;
 				const generation = mode === "sidecar"
-					? join(`${archive}.unpacked`, "v4", packageId, target.id)
+					? (existsSync(join(sidecar, nativeRecord.group)) ? sidecar : join(sidecar, "v4", packageId, target.id))
 					: join(nativeCache, "v4", digest(Buffer.from(realpathSync(archive))), "generations", packageId, "native", target.id);
 				const materialized = join(generation, nativeRecord.group, "root", nativeRecord.path);
 				assert.equal(manifest.formatVersion, 4);
@@ -144,6 +145,7 @@ for (const mode of ["cache", "sidecar"]) {
 					PATH: [bin, "/usr/bin", "/bin"].join(delimiter),
 					TERM: "xterm-256color",
 					TMPDIR: runtimeTmp,
+					DNR_CONFIG_DIR: join(temp, "dnr-config"),
 					DNR_CACHE_DIR: nativeCache,
 					XDG_DATA_HOME: join(temp, "data"),
 					DNP_TEST_MATERIALIZED_PATH: materialized,
@@ -181,8 +183,6 @@ for (const mode of ["cache", "sidecar"]) {
 					"--no-context-files",
 					"--no-prompt-templates",
 					"--no-themes",
-					"-e",
-					"builtin:bash",
 					"-e",
 					"builtin:codemode",
 					"-e",
