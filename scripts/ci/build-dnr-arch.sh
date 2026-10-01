@@ -41,6 +41,12 @@ fi
 
 cd "$root"
 [[ $(git rev-parse HEAD) == "$commit" ]]
+for package in pi-dnr pi-dnr-bin; do
+    metadata=$(mktemp)
+    (cd "packaging/aur/$package" && makepkg --printsrcinfo) > "$metadata"
+    diff -u "packaging/aur/$package/.SRCINFO" "$metadata"
+    rm "$metadata"
+done
 source "$recipe"
 [[ v$pkgver == "$tag" || pi-dnr-v$pkgver-$pkgrel == "$tag" ]]
 # Runtime dependencies belong on end-user machines. Check every build dependency
