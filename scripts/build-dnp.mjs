@@ -61,7 +61,7 @@ if (version.status !== 0 || !parsed || (Number(parsed[1]) === 0 && Number(parsed
 }
 // Use the upstream TS compiler to rewrite .ts imports and emit real JavaScript.
 // The offline AI build validates generated catalogs instead of fetching at build time.
-for (const name of ["chord", "tui", "telemetry", "ai", "agent", "codemode", "mcp", "coding-agent"]) {
+for (const name of ["tui", "telemetry", "ai", "agent", "codemode", "mcp", "coding-agent"]) {
 	run("npm", [
 		"--prefix",
 		join(repoRoot, "packages", name),
@@ -110,7 +110,7 @@ try {
 			cpSync(join(packageDir, "src", path, file), destination, { recursive: true });
 		}
 	}
-	for (const path of ["docs", "examples", "README.md", "CHANGELOG.md"]) {
+	for (const path of ["docs", "examples", "schemas", "README.md", "CHANGELOG.md"]) {
 		cpSync(join(packageDir, path), join(appDir, path), {
 			recursive: true,
 			filter: (source) => !["node_modules", "dist", ".git"].includes(source.split("/").at(-1)),
