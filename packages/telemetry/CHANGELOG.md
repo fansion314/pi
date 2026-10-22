@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Expose telemetry source entry points for source-condition workspace tests before building package outputs.
+
 ## [1.4.0] - 2026-10-21
 
 ### Breaking Changes
