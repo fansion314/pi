@@ -118,6 +118,13 @@ Attribution:
 
 ## Releasing
 
+This fork distributes Pi through DNR only. Keep exactly these workflows when
+synchronizing upstream: `release-dnr.yml`, `release-dnr-macos.yml`, and
+`backfill-signatures.yml`. Do not restore upstream CI, npm publishing, Nix,
+environment-daemon, scheduled, or issue-management workflows. DNR publishing
+uses tag/manual events and not cron. The upstream npm release skill below
+does not apply to DNR packaging releases.
+
 For release preparation, publishing, verification, or recovery, load and follow [.pi/skills/release.md](.pi/skills/release.md).
 
 ## User Override
