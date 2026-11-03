@@ -61,7 +61,7 @@ if (version.status !== 0 || !parsed || (Number(parsed[1]) === 0 && Number(parsed
 }
 // Use the upstream TS compiler to rewrite .ts imports and emit real JavaScript.
 // The offline AI build validates generated catalogs instead of fetching at build time.
-for (const name of ["tui", "telemetry", "ai", "agent", "codemode", "mcp", "coding-agent"]) {
+for (const name of ["tui", "telemetry", "schema", "ai", "agent", "codemode", "mcp", "coding-agent"]) {
 	run("npm", [
 		"--prefix",
 		join(repoRoot, "packages", name),

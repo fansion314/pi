@@ -170,7 +170,7 @@ After building, run `npm run check:package-install`. It packs the public package
 ```
 packages/
   ai/           # LLM provider abstraction
-  agent/        # Agent loop and message types  
+  agent/        # Agent loop and message types
   tui/          # Terminal UI components
   coding-agent/ # CLI and interactive mode
 ```

@@ -44,8 +44,8 @@ jobs:
           test "$(uname -sm)" = 'Darwin arm64'
       - name: Install shared Homebrew runtime
         run: |
-          brew tap fansion314/packages https://github.com/fansion314/packages.git
-          brew install fansion314/packages/dnr
+          brew tap fansionia/tap https://github.com/fansion314/packages.git
+          brew install fansionia/tap/dnr
           dnr --version
           dnc --version
           brew install libarchive
