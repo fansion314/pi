@@ -1,6 +1,7 @@
 name: Release Pi DNR package
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
@@ -31,12 +32,16 @@ jobs:
           path: ${{ runner.temp }}/pi-dnr-cache/npm
           key: pi-dnr-npm-${{ hashFiles('package-lock.json') }}
           restore-keys: pi-dnr-npm-
-      - name: Build in the official Arch image using standalone dnc
+      - name: Build and verify in the official Arch image
         env:
           RELEASE_TAG: ${{ github.ref_name }}
           RELEASE_COMMIT: ${{ github.sha }}
           DNC_VERSION: '0.4.0'
         run: |
+          if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
+            source packaging/aur/pi-dnr/PKGBUILD
+            RELEASE_TAG="pi-dnr-v$pkgver-$pkgrel"
+          fi
           mkdir -p "$RUNNER_TEMP/pi-dnr-cache" .artifacts/dnr-release
           docker pull ghcr.io/archlinux/archlinux:base-devel
           docker image inspect ghcr.io/archlinux/archlinux:base-devel \
@@ -64,6 +69,7 @@ jobs:
           if-no-files-found: ignore
 
   release:
+    if: github.event_name == 'push'
     concurrency:
       group: publish-dnr-${{ github.ref_name }}
       cancel-in-progress: false

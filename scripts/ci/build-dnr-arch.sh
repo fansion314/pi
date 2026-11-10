@@ -20,19 +20,24 @@ if (( EUID == 0 )); then
     done
     pacman -Syu --noconfirm --needed base-devel curl ca-certificates "${build_dependencies[@]}"
     mkdir -p "$packager" "$stage/src" "$output" /cache/npm
-    archive="dnc-$dnc_version-1-x86_64.pkg.tar.zst"
-    url="https://github.com/fansion314/dnr/releases/download/v$dnc_version/$archive"
-    for suffix in '' '.sha256'; do
-        curl --fail --location --silent --show-error --connect-timeout 20 --max-time 180 \
-            --retry 3 --retry-all-errors --retry-delay 5 --output "$packager/$archive$suffix" "$url$suffix"
+    for runtime_package in dnc dnr-webview; do
+        archive="$runtime_package-$dnc_version-1-x86_64.pkg.tar.zst"
+        url="https://github.com/fansion314/dnr/releases/download/v$dnc_version/$archive"
+        for suffix in '' '.sha256'; do
+            curl --fail --location --silent --show-error --connect-timeout 20 --max-time 180 \
+                --retry 3 --retry-all-errors --retry-delay 5 --output "$packager/$archive$suffix" "$url$suffix"
+        done
+        (
+            cd "$packager"
+            read -r digest filename extra < "$archive.sha256"
+            [[ $digest =~ ^[0-9a-f]{64}$ && $filename == "$archive" && -z $extra ]]
+            printf '%s  %s\n' "$digest" "$archive" | sha256sum --check
+        )
     done
-    (
-        cd "$packager"
-        read -r digest filename extra < "$archive.sha256"
-        [[ $digest =~ ^[0-9a-f]{64}$ && $filename == "$archive" && -z $extra ]]
-        printf '%s  %s\n' "$digest" "$archive" | sha256sum --check
-    )
-    pacman -U --noconfirm "$packager/$archive"
+    # The WebView runtime provides the same CLI/Node-API host without a CEF download.
+    pacman -U --noconfirm "$packager/dnc-$dnc_version-1-x86_64.pkg.tar.zst" \
+        "$packager/dnr-webview-$dnc_version-1-x86_64.pkg.tar.zst"
+    pacman -S --noconfirm --needed ripgrep fd
     useradd --create-home --uid "${PI_BUILD_UID:?missing build uid}" builder
     chown -R builder:builder "$stage" "$output" /cache
     exec runuser -u builder -- env npm_config_cache=/cache/npm \
@@ -49,8 +54,8 @@ for package in pi-dnr pi-dnr-bin; do
 done
 source "$recipe"
 [[ v$pkgver == "$tag" || pi-dnr-v$pkgver-$pkgrel == "$tag" ]]
-# Runtime dependencies belong on end-user machines. Check every build dependency
-# explicitly, then avoid makepkg pulling dnr and its GUI libraries into this job.
+# Check every build dependency; the disposable builder also has the published
+# WebView runtime for executing the resulting application outside the checkout.
 pacman -T "${makedepends[@]}"
 export SOURCE_DATE_EPOCH
 SOURCE_DATE_EPOCH=$(git show -s --format=%ct "$commit")
@@ -64,6 +69,12 @@ cp "$recipe" "$stage/PKGBUILD"
 )
 cd "$stage"
 makepkg --noextract --force --noconfirm --nodeps
+(
+    cd "$stage/src/pi"
+    bash scripts/ci/check-dnr-source.sh
+    PI_DNP_TEST_PACKAGE="$stage/src/pi/dist/pi.dnp" \
+        node --test scripts/dnp-package.test.mjs scripts/dnp-smoke.test.mjs
+)
 package_file="pi-dnr-$pkgver-$pkgrel-x86_64.pkg.tar.zst"
 [[ -f $package_file ]]
 mkdir -p installed

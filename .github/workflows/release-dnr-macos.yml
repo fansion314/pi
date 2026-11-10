@@ -12,6 +12,10 @@ on:
         description: 'New immutable macOS package revision'
         default: '1'
         type: string
+      validate_only:
+        description: 'Build and test the checked-out maintenance SHA without publishing or requiring a tag'
+        default: false
+        type: boolean
 permissions:
   contents: read
 concurrency:
@@ -40,7 +44,12 @@ jobs:
         run: |
           [[ $PACKAGE_REVISION =~ ^[1-9][0-9]*$ ]]
           [[ $RELEASE_TAG =~ ^pi-dnr-v[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]]
-          git merge-base --is-ancestor "refs/tags/$RELEASE_TAG" HEAD
+          if [[ '${{ inputs.validate_only }}' == true ]]; then
+            source packaging/aur/pi-dnr/PKGBUILD
+            test "$RELEASE_TAG" = "pi-dnr-v$pkgver-$pkgrel"
+          else
+            git merge-base --is-ancestor "refs/tags/$RELEASE_TAG" HEAD
+          fi
           test "$(uname -sm)" = 'Darwin arm64'
       - name: Install shared Homebrew runtime
         run: |
@@ -58,6 +67,7 @@ jobs:
           if-no-files-found: error
           compression-level: 0
   publish:
+    if: inputs.validate_only != true
     needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 15
