@@ -57,7 +57,7 @@ jobs:
           brew install fansionia/tap/dnr
           dnr --version
           dnc --version
-          brew install libarchive
+          brew install libarchive ripgrep fd
       - name: Build and test application
         run: bash scripts/ci/build-dnr-macos.sh
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
