@@ -151,6 +151,8 @@ for (const mode of ["cache", "sidecar"]) {
 					DNP_TEST_MATERIALIZED_PATH: materialized,
 					PI_OFFLINE: "1",
 					PI_TELEMETRY: "0",
+					// Model listing uses a fixture key; PI_OFFLINE prevents provider calls.
+					DEEPSEEK_API_KEY: "dnp-smoke-key",
 					PI_CODING_AGENT_DIR: join(temp, "config"),
 					DNP_TEST_CWD: cwd,
 					DNP_TEST_PACKAGE_DIR: app,
@@ -176,6 +178,9 @@ for (const mode of ["cache", "sidecar"]) {
 				const version = JSON.parse(readFileSync(join(repoRoot, "packages/coding-agent/package.json"), "utf8")).version;
 				assert.equal(run(["--version"]).trim(), version);
 				assert.match(run(["--help"]), /Usage:/);
+				const modelList = run(["--list-models", "deepseek"]);
+				assert.match(modelList, /deepseek\s+deepseek-flash/);
+				assert.match(modelList, /deepseek-completions\s+deepseek-flash/);
 				const session = join(cwd, "session.jsonl");
 				const smokeArgs = [
 					"--no-extensions",
