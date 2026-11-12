@@ -6,6 +6,8 @@
 
 - Expose telemetry source entry points for source-condition workspace tests before building package outputs.
 
+## [1.5.2] - 2026-11-10
+
 ## [1.5.1] - 2026-11-09
 
 ### Added
