@@ -44,6 +44,8 @@ if (( EUID == 0 )); then
         bash "$0" "$tag" "$commit" "$dnc_version"
 fi
 
+export PACKAGER='Fansionia Packages <packages@fansionia.world>'
+
 cd "$root"
 [[ $(git rev-parse HEAD) == "$commit" ]]
 for package in pi-dnr pi-dnr-bin; do
@@ -77,6 +79,7 @@ makepkg --noextract --force --noconfirm --nodeps
 )
 package_file="pi-dnr-$pkgver-$pkgrel-x86_64.pkg.tar.zst"
 [[ -f $package_file ]]
+bsdtar -xOf "$package_file" .PKGINFO | grep -Fx "packager = $PACKAGER"
 mkdir -p installed
 bsdtar -xf "$package_file" -C installed usr/bin usr/lib/pi
 [[ $(readlink installed/usr/bin/pi) == ../lib/pi/pi.dnp ]]
